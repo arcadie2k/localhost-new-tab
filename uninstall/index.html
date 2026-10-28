@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Localhost New Tab removed</title>
+  <link rel="icon" type="image/png" href="../demo/icons/icon32.png">
+  <style>
+    :root {
+      --ink: #1d1d1f;
+      --graphite: #6e6e73;
+      --paper: #ffffff;
+      --ash: #f5f5f7;
+      --hairline: #e3e3e8;
+      --action: #0071e3;
+      --link: #0066cc;
+      color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #f5f5f7;
+        --graphite: #a1a1a6;
+        --paper: #000000;
+        --ash: #111112;
+        --hairline: #2c2c2e;
+        --link: #2997ff;
+        color-scheme: dark;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--ash);
+      color: var(--ink);
+      font: 400 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif;
+      letter-spacing: -0.016em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      padding: 72px 24px 48px;
+      background: var(--paper);
+    }
+
+    main {
+      padding: 48px 24px 96px;
+    }
+
+    .inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font: 600 40px/1.1 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif;
+      letter-spacing: -0.005em;
+      text-wrap: balance;
+    }
+
+    .lede {
+      margin: 8px 0 0;
+      font-size: 21px;
+      line-height: 1.24;
+      color: var(--graphite);
+    }
+
+    h2 {
+      margin: 48px 0 8px;
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.011em;
+    }
+
+    h2:first-child {
+      margin-top: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--graphite);
+    }
+
+    code {
+      display: block;
+      margin-top: 16px;
+      padding: 14px 18px;
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font: 400 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    button {
+      margin-top: 16px;
+      height: 44px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 980px;
+      background: var(--action);
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--action);
+      outline-offset: 2px;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .fine {
+      margin-top: 56px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <h1>Localhost New Tab is removed.</h1>
+      <p class="lede">One last step: the helper is still on your Mac.</p>
+    </div>
+  </header>
+  <main>
+    <div class="inner">
+      <h2>Remove the helper and its data</h2>
+      <p>Paste this in Terminal. It deletes the helper, its browser registrations and the <span style="font-family: ui-monospace, monospace">~/.localhost-new-tab</span> folder.</p>
+      <code id="cmd">curl -fsSL https://raw.githubusercontent.com/arcadie2k/localhost-new-tab/main/install.sh | sh -s -- --uninstall</code>
+      <button id="copy" type="button">Copy command</button>
+
+      <h2>Planning to come back?</h2>
+      <p>Add <span style="font-family: ui-monospace, monospace">--keep-history</span> to the end of the command to keep your list of projects.</p>
+
+      <p class="fine">The helper is harmless if you leave it: Chrome only starts it for this extension. Thanks for trying it. <a href="https://github.com/arcadie2k/localhost-new-tab">Source on GitHub</a></p>
+    </div>
+  </main>
+  <script>
+    document.getElementById('copy').addEventListener('click', async (e) => {
+      try {
+        await navigator.clipboard.writeText(document.getElementById('cmd').textContent);
+        e.target.textContent = 'Copied';
+        setTimeout(() => (e.target.textContent = 'Copy command'), 2000);
+      } catch {}
+    });
+  </script>
+</body>
+</html>

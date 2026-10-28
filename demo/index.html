@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Localhost New Tab demo</title>
+  <meta name="description" content="Every localhost project you've run, one new tab away. Interactive demo with fictional projects.">
+  <meta property="og:title" content="Localhost New Tab">
+  <meta property="og:description" content="Every localhost project you've run, one new tab away.">
+  <meta property="og:image" content="https://arcadie2k.github.io/localhost-new-tab/assets/social/og-1200x630.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon16.png">
+  <link rel="stylesheet" href="newtab.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <p class="demo-banner">Interactive demo with fictional projects. The real extension reads your own localhost. <a href="https://github.com/arcadie2k/localhost-new-tab">Get it on GitHub</a></p>
+  <main class="page" id="app" aria-busy="true">
+    <header class="masthead">
+      <div class="masthead-inner">
+      <div class="titles-block">
+        <h1 class="headline" id="headline">&nbsp;</h1>
+        <p class="lede" id="lede">&nbsp;</p>
+      </div>
+      <div class="tools" id="tools" hidden>
+      <div class="view-toggle" role="group" aria-label="Layout">
+        <button class="view-btn" data-view="grid" aria-pressed="true" aria-label="Grid view" data-tip="Grid"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+        <button class="view-btn" data-view="list" aria-pressed="false" aria-label="List view" data-tip="List"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+      </div>
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button class="theme-btn" data-theme-choice="auto" aria-pressed="true" aria-label="Match system theme" data-tip="Auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></button>
+        <button class="theme-btn" data-theme-choice="light" aria-pressed="false" aria-label="Light theme" data-tip="Light"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+        <button class="theme-btn" data-theme-choice="dark" aria-pressed="false" aria-label="Dark theme" data-tip="Dark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      </div>
+      <label class="search" id="search" hidden>
+        <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.75"/><path d="m10.5 10.5 3.25 3.25"/></svg>
+        <input id="query" type="text" placeholder="Search projects" autocomplete="off" spellcheck="false" aria-label="Search projects">
+        <kbd class="search-key" aria-hidden="true">/</kbd>
+      </label>
+      </div>
+      </div>
+    </header>
+
+    <div class="board">
+      <div class="board-inner">
+
+    <section class="section" id="section-pinned" hidden>
+      <h2 class="section-label"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>Pinned <span class="section-count" id="count-pinned"></span></h2>
+      <ul class="grid" id="grid-pinned"></ul>
+    </section>
+
+    <section class="section" id="section-running" hidden>
+      <h2 class="section-label"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>Running <span class="section-count" id="count-running"></span></h2>
+      <ul class="grid" id="grid-running"></ul>
+    </section>
+
+    <section class="section" id="section-services" hidden>
+      <h2 class="section-label"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01"/><path d="M6 17h.01"/></svg>Services <span class="section-count" id="count-services"></span></h2>
+      <ul class="grid" id="grid-services"></ul>
+    </section>
+
+    <section class="section" id="section-recent" hidden>
+      <h2 class="section-label">Recent <span class="section-count" id="count-recent"></span></h2>
+      <ul class="grid" id="grid-recent"></ul>
+    </section>
+
+    <p class="empty" id="empty" hidden></p>
+
+    <section class="setup" id="setup" hidden>
+      <p class="setup-text">The new tab needs a small helper on your Mac to read ports and start or stop projects. Paste this in Terminal once, then reload this tab. It needs Node.js 18 or newer.</p>
+      <code class="setup-command" id="setup-command"></code>
+      <div class="setup-actions">
+        <button class="btn btn-filled" id="copy-setup">Copy command</button>
+        <button class="btn btn-ghost" id="retry-setup">Reload</button>
+      </div>
+      <p class="setup-error" id="setup-error"></p>
+    </section>
+      </div>
+    </div>
+  </main>
+
+  <div class="menu" id="menu" role="menu" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+
+  <script src="data.js"></script>
+  <script src="mock.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>

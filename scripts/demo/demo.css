@@ -1,0 +1,34 @@
+.demo-banner {
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--ash);
+  color: var(--iron);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.demo-banner a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--stone);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms ease;
+}
+
+.demo-banner a:hover {
+  text-decoration-color: currentColor;
+}
+
+.is-shot .demo-banner {
+  display: none;
+}
+
+.is-shot *,
+.is-shot *::before,
+.is-shot *::after {
+  animation: none !important;
+  transition: none !important;
+}

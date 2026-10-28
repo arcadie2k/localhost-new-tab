@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "Localhost New Tab: panou pentru servere de dezvoltare"
+  },
+  "extShortName": {
+    "message": "Localhost"
+  },
+  "extDescription": {
+    "message": "Toate proiectele tale de pe localhost, la un tab nou distanță."
+  }
+}

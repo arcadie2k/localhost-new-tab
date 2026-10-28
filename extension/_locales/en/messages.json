@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Localhost New Tab: Dev Server Dashboard",
+    "description": "Extension name shown in the Chrome Web Store and chrome://extensions. Max 75 characters."
+  },
+  "extShortName": {
+    "message": "Localhost",
+    "description": "Short name used where space is limited. Max 12 characters."
+  },
+  "extDescription": {
+    "message": "Every localhost project you've run, one new tab away.",
+    "description": "Store summary. Max 132 characters."
+  }
+}

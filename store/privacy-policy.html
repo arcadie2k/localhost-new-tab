@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy · Localhost New Tab</title>
+  <meta name="description" content="Privacy policy for the Localhost New Tab Chrome extension. All data stays on your computer.">
+  <style>
+    :root { --ink: #000; --graphite: #666; --paper: #fff; --hairline: rgba(0, 0, 0, 0.12); color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #fff; --graphite: #a3a3a3; --paper: #0a0a0a; --hairline: rgba(255, 255, 255, 0.12); color-scheme: dark; }
+    }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.65 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; }
+    main { max-width: 680px; margin: 0 auto; padding: 96px 24px 120px; }
+    .eyebrow { margin: 0 0 12px; font-size: 14px; font-weight: 500; color: var(--graphite); }
+    h1 { margin: 0; font-size: 40px; font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; }
+    h2 { margin: 48px 0 8px; font-size: 20px; font-weight: 500; letter-spacing: -0.015em; }
+    p, li { color: var(--graphite); }
+    strong { color: var(--ink); font-weight: 500; }
+    ul { padding-left: 20px; }
+    code { font: 14px ui-monospace, "SF Mono", Menlo, monospace; }
+    footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--hairline); font-size: 14px; color: var(--graphite); }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Localhost New Tab</p>
+    <h1>Privacy policy</h1>
+    <p>Last updated: October 13, 2026</p>
+
+    <p><strong>Short version: everything stays on your computer.</strong> Localhost New Tab has no server, no analytics, no tracking, no ads and no account. Nothing is sent to the developer or to any third party.</p>
+
+    <h2>What the extension stores, and where</h2>
+    <ul>
+      <li><strong>Project history</strong>: folder path, project name, framework, ports and timestamps of dev servers you have run. Stored by the local helper in <code>~/.localhost-new-tab/state.json</code> on your machine.</li>
+      <li><strong>Start commands and logs</strong>: the command used to start a project and its output, stored in <code>~/.localhost-new-tab/</code>.</li>
+      <li><strong>Page previews and favicons</strong>: screenshots of your localhost pages and their icons, stored in Chrome's local extension storage on your device.</li>
+    </ul>
+
+    <h2>What the extension can access</h2>
+    <ul>
+      <li>Only pages on <code>http://localhost</code> and <code>http://127.0.0.1</code>. It cannot read, capture or modify any other website.</li>
+      <li>Through the local helper: the list of listening network ports on your computer and the folders of the processes behind them, so it can show and control your dev servers.</li>
+    </ul>
+
+    <h2>What the extension never does</h2>
+    <ul>
+      <li>Transmit any data off your device</li>
+      <li>Sell, share or transfer data to anyone</li>
+      <li>Use data for advertising, profiling, creditworthiness or lending</li>
+      <li>Read your browsing history or pages outside localhost</li>
+    </ul>
+
+    <h2>Deleting your data</h2>
+    <p>Remove a project from the list with "Remove from list" in its menu. To delete everything, uninstall the extension (this clears its local storage). Chrome then opens a page with one command that removes the helper and the <code>~/.localhost-new-tab</code> folder. That page is static and receives no data about you.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the new version will be published at this address with a new date. The extension will never start collecting data without a new version and a clear notice.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or requests: use the support link on the extension's Chrome Web Store page.</p>
+
+    <footer>Localhost New Tab is an independent project and is not affiliated with Google.</footer>
+  </main>
+</body>
+</html>
