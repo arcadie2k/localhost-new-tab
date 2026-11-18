@@ -438,6 +438,7 @@ button {
 }
 
 .card.is-row {
+  --row-h: 52px;
   flex-direction: row;
   flex-wrap: wrap;
   border: 0;
@@ -455,16 +456,24 @@ button {
   background: color-mix(in srgb, var(--whisper) 50%, var(--surface));
 }
 
-.card.is-row .card-body {
+.card.is-row .card-body,
+.card.is-compact.is-row .card-body {
   flex: 1;
+  justify-content: center;
   min-width: 0;
-  padding: 12px 16px;
+  min-height: var(--row-h);
+  padding: 0 16px;
 }
 
 .card.is-row .card-bar {
-  height: auto;
-  min-height: 60px;
+  height: var(--row-h);
   border-top: 0;
+}
+
+.card.is-row .bar-btn:not(.bar-primary) {
+  width: var(--row-h);
+  min-width: 0;
+  padding: 0;
 }
 
 .card.is-row .ports {
@@ -485,11 +494,16 @@ button {
 
 @media (max-width: 720px) {
   .card.is-row {
+    --row-h: 44px;
     flex-direction: column;
   }
 
+  .card.is-row .card-body,
+  .card.is-compact.is-row .card-body {
+    padding: 12px 16px;
+  }
+
   .card.is-row .card-bar {
-    min-height: 44px;
     border-top: 1px solid var(--hairline);
   }
 
