@@ -15,6 +15,7 @@ export const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   server: '<rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01"/><path d="M6 17h.01"/>',
   phone: '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
+  hide: '<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>',
   spinner: '<path d="M21 12a9 9 0 1 1-6.22-8.56"/>',
 };
 
@@ -113,3 +114,25 @@ document.addEventListener('focusin', (e) => {
 });
 document.addEventListener('focusout', hideTip);
 window.addEventListener('scroll', hideTip, { passive: true });
+
+export function faviconURL(pageUrl, size = 32) {
+  const base = chrome.runtime?.getURL ? chrome.runtime.getURL('/_favicon/') : '/_favicon/';
+  return `${base}?pageUrl=${encodeURIComponent(pageUrl)}&size=${size}`;
+}
+
+export function faviconHTML(url, label, cls = '') {
+  const letter = esc((label || '?').trim()[0]?.toUpperCase() || '?');
+  return `<span class="fav ${cls}" data-letter="${letter}"><img src="${esc(faviconURL(url))}" alt="" loading="lazy" draggable="false"></span>`;
+}
+
+document.addEventListener(
+  'error',
+  (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.parentElement?.classList.contains('fav')) return;
+    const box = img.parentElement;
+    box.classList.add('is-letter');
+    box.textContent = box.dataset.letter;
+  },
+  true
+);

@@ -438,6 +438,80 @@ button {
   }
 }
 
+/* Most visited */
+
+.sites {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px;
+  margin: -2px;
+}
+
+.sites[hidden] {
+  display: none;
+}
+
+.site-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  height: 32px;
+  padding: 0 12px 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--pebble);
+  font-size: 0.875rem;
+  color: var(--iron);
+  text-decoration: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.site-chip:hover,
+.site-chip[aria-expanded="true"] {
+  background: var(--press-fill);
+  color: var(--ink);
+}
+
+.site-chip:active {
+  transform: scale(0.98);
+}
+
+.site-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fav {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.fav img {
+  width: 16px;
+  height: 16px;
+}
+
+.fav.is-letter {
+  background: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--surface);
+}
+
 /* Settings */
 
 .settings {

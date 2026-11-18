@@ -85,7 +85,27 @@
   }
   const permListeners = { added: [], removed: [] };
 
+  const TOP_SITES = [
+    ['https://github.com/', 'GitHub'],
+    ['http://localhost:3000/', 'northwind-web'],
+    ['https://mail.google.com/mail/u/0/', 'Inbox'],
+    ['https://www.figma.com/files', 'Figma'],
+    ['http://127.0.0.1:5173/', 'atlas-dashboard'],
+    ['https://linear.app/', 'Linear'],
+    ['https://www.youtube.com/', 'YouTube'],
+    ['https://vercel.com/dashboard', 'Vercel Dashboard'],
+    ['https://news.ycombinator.com/', 'Hacker News'],
+    ['https://developer.chrome.com/docs/extensions/reference/api', 'Chrome Extensions API reference'],
+    ['https://www.notion.so/', ''],
+    ['https://chatgpt.com/', 'ChatGPT'],
+  ].map(([url, title]) => ({ url, title }));
+
   window.chrome = {
+    topSites: {
+      async get() {
+        return clone(TOP_SITES);
+      },
+    },
     permissions: {
       async contains({ permissions }) {
         return permissions.every((p) => granted.has(p));
@@ -106,6 +126,7 @@
       onRemoved: { addListener: (fn) => permListeners.removed.push(fn) },
     },
     runtime: {
+      getURL: (path) => path,
       id: params.has('setup') ? 'iafmjppjfdddcnlanldpmjejhpbikdem' : 'demo',
       lastError: null,
       sendNativeMessage(_host, msg, cb) {

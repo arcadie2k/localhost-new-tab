@@ -1,10 +1,11 @@
 import { $, state, toast } from './core.js';
 import { render, startProjects, syncTools } from './projects.js';
+import { renderMostVisited } from './most-visited.js';
 import { featureOn, initSettings, openSettings, prefs, refreshPermissions, savePrefs } from './settings.js';
 
 window.toast = toast;
 
-const tabHooks = [];
+const tabHooks = [renderMostVisited];
 
 export function onTabChange(fn) {
   tabHooks.push(fn);
