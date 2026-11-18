@@ -692,6 +692,39 @@ button {
   color: var(--graphite);
 }
 
+.bm-item.drop-before::before,
+.bm-item.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.bm-item.drop-before::before {
+  top: -1px;
+}
+
+.bm-item.drop-after::after {
+  bottom: -1px;
+}
+
+.bm-item.drop-into > .bm-row {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.bm-col.drop-end {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.bm-columns.is-dragging .bm-more {
+  display: none;
+}
+
 .bm-actions {
   display: flex;
   gap: 8px;

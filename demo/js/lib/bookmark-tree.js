@@ -51,3 +51,22 @@ export function normalizeUrl(raw) {
     return null;
   }
 }
+
+function findWithAncestors(root, id, trail = []) {
+  if (root.id === id) return [...trail, root];
+  for (const child of root.children || []) {
+    const hit = findWithAncestors(child, id, [...trail, root]);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+export function canDrop(tree, dragId, targetParentId) {
+  const dragTrail = findWithAncestors(tree, dragId);
+  const targetTrail = findWithAncestors(tree, targetParentId);
+  if (!dragTrail || !targetTrail) return false;
+  const drag = dragTrail[dragTrail.length - 1];
+  const target = targetTrail[targetTrail.length - 1];
+  if (isFixedNode(drag) || target.id === '0' || !target.children) return false;
+  return !targetTrail.some((n) => n.id === drag.id);
+}

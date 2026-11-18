@@ -1,7 +1,7 @@
 import { $, esc, icon, state, toast, faviconHTML } from './core.js';
 import { featureOn } from './settings.js';
 import { openPopover, closeMenu, menuItem } from './menu.js';
-import { columnsFor, countBookmarks, displayTitle, isBookmarklet, isFixedNode, normalizeUrl, restoreTree } from './lib/bookmark-tree.js';
+import { canDrop, columnsFor, countBookmarks, displayTitle, isBookmarklet, isFixedNode, normalizeUrl, restoreTree } from './lib/bookmark-tree.js';
 
 const view = {
   tree: null,
@@ -48,7 +48,8 @@ function rowHTML(node, colIndex, index, extra = '') {
 
 function rowInner(node, colIndex, index, extra) {
   const selected = view.path[colIndex] === node.id;
-  const attrs = `data-id="${esc(node.id)}" data-col="${colIndex}" data-index="${index}"`;
+  const drag = colIndex >= 0 && !isFixedNode(node) ? ' draggable="true"' : ' draggable="false"';
+  const attrs = `data-id="${esc(node.id)}" data-col="${colIndex}" data-index="${index}"${drag}`;
   const title = esc(displayTitle(node));
   if (!node.url) {
     return `<button class="bm-row is-folder${selected ? ' is-selected' : ''}" ${attrs} aria-expanded="${selected}">${icon('folder', 'bm-folder')}<span class="bm-title">${title}</span>${extra}${icon('chevron', 'bm-chevron')}</button>`;
@@ -333,3 +334,93 @@ $('bookmarks-view').addEventListener('keydown', (e) => {
     cancelEdit();
   }
 });
+
+const drag = { id: null, hoverId: null, hoverTimer: null };
+
+function clearDropMarks() {
+  document.querySelectorAll('.drop-before, .drop-after, .drop-into, .drop-end').forEach((el) => el.classList.remove('drop-before', 'drop-after', 'drop-into', 'drop-end'));
+}
+
+function dropTarget(e) {
+  const item = e.target.closest('.bm-item[data-id]');
+  const col = e.target.closest('.bm-col');
+  if (!col) return null;
+  const folderId = col.dataset.folder;
+  if (!item) {
+    const count = col.querySelectorAll(':scope > .bm-item[data-id]').length;
+    return { parentId: folderId, index: count, mark: col, cls: 'drop-end' };
+  }
+  const node = view.nodes.get(item.dataset.id);
+  const index = Number(item.querySelector('.bm-row')?.dataset.index ?? 0);
+  const r = item.getBoundingClientRect();
+  const y = (e.clientY - r.top) / r.height;
+  if (node && !node.url && y > 0.25 && y < 0.75) return { parentId: node.id, index: undefined, mark: item, cls: 'drop-into', folder: node };
+  return y < 0.5 ? { parentId: folderId, index, mark: item, cls: 'drop-before' } : { parentId: folderId, index: index + 1, mark: item, cls: 'drop-after' };
+}
+
+function endDrag() {
+  drag.id = null;
+  drag.hoverId = null;
+  clearTimeout(drag.hoverTimer);
+  clearDropMarks();
+  $('bm-columns').classList.remove('is-dragging');
+}
+
+$('bm-columns').addEventListener('dragstart', (e) => {
+  const row = e.target.closest?.('.bm-row[draggable="true"]');
+  if (!row) return;
+  closeMenu(true);
+  drag.id = row.dataset.id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/x-bookmark-id', drag.id);
+  const node = view.nodes.get(drag.id);
+  if (node?.url) e.dataTransfer.setData('text/uri-list', node.url);
+  $('bm-columns').classList.add('is-dragging');
+});
+
+$('bm-columns').addEventListener('dragover', (e) => {
+  if (!drag.id) return;
+  const t = dropTarget(e);
+  clearDropMarks();
+  if (!t || !canDrop(view.tree, drag.id, t.parentId)) {
+    clearTimeout(drag.hoverTimer);
+    drag.hoverId = null;
+    return;
+  }
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  t.mark.classList.add(t.cls);
+  if (t.folder && drag.hoverId !== t.folder.id) {
+    drag.hoverId = t.folder.id;
+    clearTimeout(drag.hoverTimer);
+    const colIndex = Number(t.mark.querySelector('.bm-row')?.dataset.col ?? 0);
+    drag.hoverTimer = setTimeout(() => {
+      if (drag.id && drag.hoverId === t.folder.id && view.path[colIndex] !== t.folder.id) openFolder(t.folder.id, colIndex);
+    }, 600);
+  } else if (!t.folder) {
+    drag.hoverId = null;
+    clearTimeout(drag.hoverTimer);
+  }
+});
+
+$('bm-columns').addEventListener('dragleave', (e) => {
+  if (!$('bm-columns').contains(e.relatedTarget)) clearDropMarks();
+});
+
+$('bm-columns').addEventListener('drop', async (e) => {
+  if (!drag.id) return;
+  const t = dropTarget(e);
+  const id = drag.id;
+  endDrag();
+  if (!t || !canDrop(view.tree, id, t.parentId)) return;
+  e.preventDefault();
+  const dest = { parentId: t.parentId };
+  if (t.index !== undefined) dest.index = t.index;
+  try {
+    await api().move(id, dest);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.addEventListener('dragend', endDrag);

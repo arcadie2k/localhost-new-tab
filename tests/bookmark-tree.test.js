@@ -83,3 +83,23 @@ test('normalizeUrl adds https and rejects junk', async () => {
   assert.equal(normalizeUrl('mailto:me@example.com'), 'mailto:me@example.com');
   assert.equal(normalizeUrl('localhost:3000'), 'https://localhost:3000');
 });
+
+test('cannot drop folder into itself or a descendant', async () => {
+  const { canDrop } = await import('../extension/js/lib/bookmark-tree.js');
+  assert.equal(canDrop(tree, '10', '10'), false);
+  assert.equal(canDrop(tree, '10', '100'), false);
+  assert.equal(canDrop(tree, '10', '2'), true);
+});
+
+test('cannot drag fixed folders or drop into root', async () => {
+  const { canDrop } = await import('../extension/js/lib/bookmark-tree.js');
+  assert.equal(canDrop(tree, '1', '2'), false);
+  assert.equal(canDrop(tree, 'b1', '0'), false);
+});
+
+test('cannot drop into a bookmark or an unknown id', async () => {
+  const { canDrop } = await import('../extension/js/lib/bookmark-tree.js');
+  assert.equal(canDrop(tree, 'b1', 'b2'), false);
+  assert.equal(canDrop(tree, 'b1', 'nope'), false);
+  assert.equal(canDrop(tree, 'b1', '100'), true);
+});
