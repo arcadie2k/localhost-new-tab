@@ -63,6 +63,15 @@
 
     <div class="empty" id="empty" hidden><p class="empty-text" id="empty-text"></p><button class="btn btn-ghost" id="empty-settings" hidden>Open settings</button></div>
 
+    <section class="bm" id="bookmarks-view" aria-label="Bookmarks">
+      <div class="bm-toolbar">
+        <nav class="bm-crumbs" id="bm-crumbs" aria-label="Folder path"></nav>
+      </div>
+      <div class="bm-columns" id="bm-columns"></div>
+      <ul class="bm-results" id="bm-results" hidden></ul>
+      <p class="bm-empty" id="bm-empty" hidden></p>
+    </section>
+
     <section class="setup" id="setup" hidden>
       <p class="setup-text">The new tab needs a small helper on your Mac to read ports and start or stop projects. Paste this in Terminal once, then reload this tab. It needs Node.js 18 or newer.</p>
       <code class="setup-command" id="setup-command"></code>

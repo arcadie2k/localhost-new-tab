@@ -100,7 +100,132 @@
     ['https://chatgpt.com/', 'ChatGPT'],
   ].map(([url, title]) => ({ url, title }));
 
+  let nextId = 1000;
+  const bm = (title, url) => ({ title, url });
+  const folder = (title, children) => ({ title, children });
+  const seed = folder('', [
+    folder('Bookmarks bar', [
+      folder('Work', [
+        folder('Docs', [
+          bm('MDN Web Docs', 'https://developer.mozilla.org/'),
+          bm('Chrome extensions reference', 'https://developer.chrome.com/docs/extensions/reference/api'),
+          bm('React Native docs', 'https://reactnative.dev/docs/getting-started'),
+          folder('Design', [bm('Refactoring UI', 'https://www.refactoringui.com/'), bm('Laws of UX', 'https://lawsofux.com/')]),
+        ]),
+        bm('Linear', 'https://linear.app/'),
+        bm('Vercel', 'https://vercel.com/dashboard'),
+        bm('Figma: Wellastore', 'https://www.figma.com/files'),
+        bm('Sentry', 'https://sentry.io/'),
+      ]),
+      folder("Master's", [
+        bm('Course portal', 'https://example.edu/portal'),
+        bm('arXiv: retrieval practice', 'https://arxiv.org/'),
+        folder('Thesis', [bm('Overleaf', 'https://www.overleaf.com/'), bm('Zotero', 'https://www.zotero.org/')]),
+      ]),
+      folder('Gym', [bm('Strong app', 'https://www.strong.app/'), bm('Knee rehab routine', 'https://example.com/knee'), bm('', 'https://www.strava.com/dashboard')]),
+      bm('GitHub', 'https://github.com/'),
+      bm('Gmail', 'https://mail.google.com/'),
+      bm('Dark mode toggle', 'javascript:document.body.classList.toggle("dark")'),
+    ]),
+    folder('Other bookmarks', [
+      folder('Travel', [bm('Google Flights', 'https://www.google.com/travel/flights'), bm('Hiking trails', 'https://www.alltrails.com/')]),
+      bm('Hacker News', 'https://news.ycombinator.com/'),
+      bm('YouTube', 'https://www.youtube.com/'),
+    ]),
+    folder('Mobile bookmarks', []),
+  ]);
+  const nodes = new Map();
+  const build = (n, parentId, index, id) => {
+    const node = { id, parentId, index, title: n.title, dateAdded: now };
+    if (n.url !== undefined) node.url = n.url;
+    nodes.set(id, node);
+    if (n.children) node.children = n.children.map((c, i) => build(c, id, i, String(nextId++)));
+    return node;
+  };
+  const bmRoot = build(seed, undefined, 0, '0');
+  bmRoot.children.forEach((c, i) => {
+    nodes.delete(c.id);
+    c.id = String(i + 1);
+    nodes.set(c.id, c);
+    c.children.forEach((k) => (k.parentId = c.id));
+  });
+  const bmListeners = { onCreated: [], onRemoved: [], onChanged: [], onMoved: [], onChildrenReordered: [] };
+  const fire = (ev, ...args) => setTimeout(() => bmListeners[ev].forEach((fn) => fn(...args)), 0);
+  const reindex = (parent) => parent.children.forEach((c, i) => (c.index = i));
+  const strip = (n) => clone(n);
+  const descendants = (n) => [n, ...(n.children || []).flatMap(descendants)];
+  const bookmarksApi = {
+    async getTree() {
+      return [strip(bmRoot)];
+    },
+    async getSubTree(id) {
+      const n = nodes.get(id);
+      if (!n) throw new Error("Can't find bookmark for id.");
+      return [strip(n)];
+    },
+    async search(q) {
+      const needle = String(typeof q === 'string' ? q : q.query || '').toLowerCase();
+      return [...nodes.values()].filter((n) => n.url && ((n.title || '').toLowerCase().includes(needle) || n.url.toLowerCase().includes(needle))).map(strip);
+    },
+    async create({ parentId = '2', index, title = '', url }) {
+      const parent = nodes.get(parentId);
+      if (!parent || !parent.children || parentId === '0') throw new Error('Invalid parent');
+      const node = { id: String(nextId++), parentId, title, dateAdded: Date.now() };
+      if (url !== undefined) node.url = url;
+      else node.children = [];
+      const at = index === undefined ? parent.children.length : Math.min(index, parent.children.length);
+      parent.children.splice(at, 0, node);
+      reindex(parent);
+      nodes.set(node.id, node);
+      fire('onCreated', node.id, strip(node));
+      return strip(node);
+    },
+    async update(id, changes) {
+      const n = nodes.get(id);
+      if (!n || id === '0' || n.parentId === '0') throw new Error("Can't modify the root bookmark folders.");
+      if (changes.title !== undefined) n.title = changes.title;
+      if (changes.url !== undefined && n.url !== undefined) n.url = changes.url;
+      fire('onChanged', id, { title: n.title, url: n.url });
+      return strip(n);
+    },
+    async move(id, { parentId, index }) {
+      const n = nodes.get(id);
+      if (!n || n.parentId === '0' || id === '0') throw new Error("Can't modify the root bookmark folders.");
+      const from = nodes.get(n.parentId);
+      const to = nodes.get(parentId || n.parentId);
+      if (!to || !to.children || to.id === '0' || descendants(n).includes(to)) throw new Error('Invalid move');
+      const oldIndex = from.children.indexOf(n);
+      let at = index === undefined ? to.children.length : index;
+      if (from === to && at > oldIndex) at -= 1;
+      from.children.splice(oldIndex, 1);
+      to.children.splice(Math.min(at, to.children.length), 0, n);
+      n.parentId = to.id;
+      reindex(from);
+      reindex(to);
+      fire('onMoved', id, { parentId: to.id, index: n.index, oldParentId: from.id, oldIndex });
+      return strip(n);
+    },
+    async remove(id) {
+      const n = nodes.get(id);
+      if (!n) throw new Error("Can't find bookmark for id.");
+      if (n.children && n.children.length) throw new Error("Can't remove non-empty folder (use recursive to force).");
+      return bookmarksApi.removeTree(id);
+    },
+    async removeTree(id) {
+      const n = nodes.get(id);
+      if (!n || n.parentId === '0' || id === '0') throw new Error("Can't modify the root bookmark folders.");
+      const parent = nodes.get(n.parentId);
+      const index = parent.children.indexOf(n);
+      parent.children.splice(index, 1);
+      reindex(parent);
+      descendants(n).forEach((d) => nodes.delete(d.id));
+      fire('onRemoved', id, { parentId: parent.id, index, node: strip(n) });
+    },
+  };
+  for (const ev of Object.keys(bmListeners)) bookmarksApi[ev] = { addListener: (fn) => bmListeners[ev].push(fn) };
+
   window.chrome = {
+    bookmarks: bookmarksApi,
     topSites: {
       async get() {
         return clone(TOP_SITES);
@@ -126,7 +251,7 @@
       onRemoved: { addListener: (fn) => permListeners.removed.push(fn) },
     },
     runtime: {
-      getURL: (path) => path,
+      getURL: () => 'data:,',
       id: params.has('setup') ? 'iafmjppjfdddcnlanldpmjejhpbikdem' : 'demo',
       lastError: null,
       sendNativeMessage(_host, msg, cb) {
