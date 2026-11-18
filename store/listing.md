@@ -101,7 +101,7 @@ Regenerate after UI changes: `node scripts/icons.js && node scripts/store-assets
 **Single purpose**
 
 ```
-Replaces the new tab page with a dashboard of the local development servers (localhost projects) the user has run, with controls to start, stop and open them.
+Replaces the new tab page with a developer dashboard: the local development servers (localhost projects) the user has run, with controls to start, stop and open them, plus optional quick access to the user's most visited sites and bookmarks.
 ```
 
 **Permission justifications**
@@ -113,6 +113,9 @@ Replaces the new tab page with a dashboard of the local development servers (loc
 | `storage` | Stores page preview thumbnails and favicons of the user's localhost projects locally so the new tab shows them instantly. |
 | `unlimitedStorage` | Thumbnails are images. Without this, a user with many projects would hit the default local storage quota and lose previews. Data never leaves the device. |
 | Host permission `http://localhost/*`, `http://127.0.0.1/*` | Captures a preview of localhost tabs the user visits and reads their favicon. Limited to local development servers; the extension has no access to any other site. |
+| `favicon` | Shows site icons next to most visited sites and bookmarks. Icons come from Chrome's local favicon cache. |
+| `topSites` (optional) | Only requested when the user turns on Most Visited in settings. Shows their most visited sites on the new tab. Read only, nothing leaves the device. |
+| `bookmarks` (optional) | Only requested when the user turns on Bookmarks in settings. Lets them browse, open, rename, move and delete their own bookmarks from the new tab. Nothing leaves the device. |
 
 **Remote code**: No, I am not using remote code. All JavaScript is packaged in the extension.
 
