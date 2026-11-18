@@ -4,7 +4,7 @@
   "short_name": "__MSG_extShortName__",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon16.png",
@@ -18,6 +18,19 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["nativeMessaging", "alarms", "storage", "unlimitedStorage"],
-  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"]
+  "permissions": [
+    "nativeMessaging",
+    "alarms",
+    "storage",
+    "unlimitedStorage",
+    "favicon"
+  ],
+  "optional_permissions": [
+    "topSites",
+    "bookmarks"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ]
 }

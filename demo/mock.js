@@ -79,7 +79,32 @@
     for (const fn of listeners) fn(changes, 'local');
   }
 
+  const granted = new Set(params.has('granted') ? ['topSites', 'bookmarks'] : []);
+  if (params.has('granted') || params.has('revoked')) {
+    store.prefs = { ...(store.prefs || {}), sections: { ...((store.prefs || {}).sections || {}), mostVisited: true, bookmarks: true } };
+  }
+  const permListeners = { added: [], removed: [] };
+
   window.chrome = {
+    permissions: {
+      async contains({ permissions }) {
+        return permissions.every((p) => granted.has(p));
+      },
+      async request({ permissions }) {
+        await new Promise((r) => setTimeout(r, 150));
+        if (params.has('decline')) return false;
+        permissions.forEach((p) => granted.add(p));
+        for (const fn of permListeners.added) fn({ permissions });
+        return true;
+      },
+      async remove({ permissions }) {
+        permissions.forEach((p) => granted.delete(p));
+        for (const fn of permListeners.removed) fn({ permissions });
+        return true;
+      },
+      onAdded: { addListener: (fn) => permListeners.added.push(fn) },
+      onRemoved: { addListener: (fn) => permListeners.removed.push(fn) },
+    },
     runtime: {
       id: params.has('setup') ? 'iafmjppjfdddcnlanldpmjejhpbikdem' : 'demo',
       lastError: null,

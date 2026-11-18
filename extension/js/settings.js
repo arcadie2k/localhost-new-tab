@@ -1,11 +1,23 @@
 import { $, state } from './core.js';
 import { closeMenu } from './menu.js';
-import { normalizePrefs } from './lib/prefs.js';
+import { normalizePrefs, needsBadge } from './lib/prefs.js';
+import { FEATURE_PERMISSION, grantedMap, onPermissionsChange, requestPermission } from './permissions.js';
 
 let changed = () => {};
 
 export function prefs() {
   return normalizePrefs(state.media.prefs);
+}
+
+export function featureOn(id) {
+  const perm = FEATURE_PERMISSION[id];
+  return prefs().sections[id] && (!perm || Boolean(state.granted && state.granted[perm]));
+}
+
+export async function refreshPermissions() {
+  state.granted = await grantedMap();
+  $('settings-badge').hidden = !needsBadge(state.granted);
+  syncSettings();
 }
 
 export async function savePrefs(patch) {
@@ -24,7 +36,7 @@ export function applyTheme(choice) {
 
 export function syncSettings() {
   const p = prefs();
-  for (const input of $('settings').querySelectorAll('[data-section]')) input.checked = p.sections[input.dataset.section];
+  for (const input of $('settings').querySelectorAll('[data-section]')) input.checked = featureOn(input.dataset.section);
   $('unhide-sites').hidden = !p.hiddenSites.length;
 }
 
@@ -59,8 +71,17 @@ export async function setSection(id, on) {
   changed(next);
 }
 
-export function initSettings({ onChange, beforeToggle }) {
+function askPermission(id) {
+  const perm = FEATURE_PERMISSION[id];
+  return perm ? requestPermission(perm) : Promise.resolve(true);
+}
+
+export function initSettings({ onChange }) {
   changed = onChange;
+  onPermissionsChange(async () => {
+    await refreshPermissions();
+    changed(prefs());
+  });
   applyTheme(document.documentElement.dataset.theme || 'auto');
 
   $('settings-btn').addEventListener('click', () => ($('settings').hidden ? openSettings() : closeSettings()));
@@ -78,14 +99,17 @@ export function initSettings({ onChange, beforeToggle }) {
   for (const input of $('settings').querySelectorAll('[data-section]')) {
     input.addEventListener('change', async () => {
       const id = input.dataset.section;
-      if (input.checked && beforeToggle) {
-        const ok = await beforeToggle(id);
+      const on = input.checked;
+      if (on) {
+        const ok = await askPermission(id);
         if (!ok) {
           input.checked = false;
           return;
         }
+        state.granted = { ...state.granted, [FEATURE_PERMISSION[id]]: true };
       }
-      setSection(id, input.checked);
+      await setSection(id, on);
+      if (on) refreshPermissions();
     });
   }
 

@@ -420,6 +420,7 @@ button {
 }
 
 .badge-dot {
+  animation: badge-pulse 2s ease-in-out infinite;
   position: absolute;
   top: 6px;
   right: 6px;
@@ -428,6 +429,13 @@ button {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 2px var(--paper);
+}
+
+@keyframes badge-pulse {
+  50% {
+    opacity: 0.45;
+    transform: scale(1.35);
+  }
 }
 
 /* Settings */
@@ -1504,6 +1512,10 @@ a.port:hover {
 
   .search {
     transition: none;
+  }
+
+  .badge-dot {
+    animation: none;
   }
 
   .menu.is-closing {

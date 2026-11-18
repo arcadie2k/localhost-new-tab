@@ -1,6 +1,6 @@
 import { $, state, toast } from './core.js';
 import { render, startProjects, syncTools } from './projects.js';
-import { initSettings, openSettings, prefs, savePrefs } from './settings.js';
+import { featureOn, initSettings, openSettings, prefs, refreshPermissions, savePrefs } from './settings.js';
 
 window.toast = toast;
 
@@ -11,7 +11,7 @@ export function onTabChange(fn) {
 }
 
 export function setTab(tab) {
-  const next = tab === 'bookmarks' && prefs().sections.bookmarks ? 'bookmarks' : 'projects';
+  const next = tab === 'bookmarks' && featureOn('bookmarks') ? 'bookmarks' : 'projects';
   const changed = state.tab !== next;
   state.tab = next;
   $('app').dataset.tab = next;
@@ -29,8 +29,8 @@ export function setTab(tab) {
 }
 
 function syncChrome() {
-  $('tab-switch').hidden = !prefs().sections.bookmarks;
-  if (state.tab === 'bookmarks' && !prefs().sections.bookmarks) setTab('projects');
+  $('tab-switch').hidden = !featureOn('bookmarks');
+  if (state.tab === 'bookmarks' && !featureOn('bookmarks')) setTab('projects');
   else for (const fn of tabHooks) fn(state.tab);
 }
 
@@ -72,8 +72,9 @@ initSettings({
   },
 });
 
-function boot() {
+async function boot() {
   state.view = prefs().view;
+  await refreshPermissions();
   setTab('projects');
   syncChrome();
   startProjects();
