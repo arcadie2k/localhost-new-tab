@@ -17,6 +17,10 @@
       <div class="titles-block">
         <h1 class="headline" id="headline">&nbsp;</h1>
         <p class="lede" id="lede">&nbsp;</p>
+        <div class="bm-titles">
+          <p class="headline" role="heading" aria-level="1">Bookmarks</p>
+          <nav class="bm-crumbs lede" id="bm-crumbs" aria-label="Folder path"></nav>
+        </div>
       </div>
       <div class="tools" id="tools">
       <div class="seg tab-switch" id="tab-switch" role="tablist" aria-label="View" hidden>
@@ -27,6 +31,7 @@
         <button class="seg-btn view-btn" data-view="grid" aria-pressed="true" aria-label="Grid view" data-tip="Grid"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
         <button class="seg-btn view-btn" data-view="list" aria-pressed="false" aria-label="List view" data-tip="List"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
       </div>
+      <button class="icon-btn bm-new-folder" id="bm-new-folder" aria-label="New folder" data-tip="New folder"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></button>
       <label class="search" id="search" hidden>
         <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.75"/><path d="m10.5 10.5 3.25 3.25"/></svg>
         <input id="query" type="text" placeholder="Search projects" autocomplete="off" spellcheck="false" aria-label="Search projects">
@@ -64,13 +69,6 @@
     <div class="empty" id="empty" hidden><p class="empty-text" id="empty-text"></p><button class="btn btn-ghost" id="empty-settings" hidden>Open settings</button></div>
 
     <section class="bm" id="bookmarks-view" aria-label="Bookmarks">
-      <div class="bm-toolbar">
-        <nav class="bm-crumbs" id="bm-crumbs" aria-label="Folder path"></nav>
-        <div class="bm-actions">
-          <button class="chip-btn" data-bm-action="new-folder"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>Folder</button>
-          <button class="chip-btn" data-bm-action="new-bookmark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Bookmark</button>
-        </div>
-      </div>
       <div class="bm-columns" id="bm-columns"></div>
       <ul class="bm-results" id="bm-results" hidden></ul>
       <p class="bm-empty" id="bm-empty" hidden></p>

@@ -6,18 +6,16 @@ import { featureOn, initSettings, openSettings, prefs, refreshPermissions, saveP
 
 window.toast = toast;
 
-const tabHooks = [renderMostVisited, renderBookmarks];
-
-export function onTabChange(fn) {
-  tabHooks.push(fn);
-}
-
 export function setTab(tab) {
   const next = tab === 'bookmarks' && featureOn('bookmarks') ? 'bookmarks' : 'projects';
   const changed = state.tab !== next;
   state.tab = next;
   $('app').dataset.tab = next;
-  for (const btn of document.querySelectorAll('.tab-btn')) btn.setAttribute('aria-selected', String(btn.dataset.tab === next));
+  for (const btn of document.querySelectorAll('.tab-btn')) {
+    const on = btn.dataset.tab === next;
+    btn.setAttribute('aria-selected', String(on));
+    btn.tabIndex = on ? 0 : -1;
+  }
   $('query').placeholder = next === 'bookmarks' ? 'Search bookmarks' : 'Search projects';
   $('query').setAttribute('aria-label', $('query').placeholder);
   if (changed) {
@@ -27,13 +25,14 @@ export function setTab(tab) {
     if (state.loaded) render();
   }
   syncTools();
-  for (const fn of tabHooks) fn(next);
+  if (changed) renderBookmarks();
 }
 
 function syncChrome() {
   $('tab-switch').hidden = !featureOn('bookmarks');
+  renderMostVisited();
   if (state.tab === 'bookmarks' && !featureOn('bookmarks')) setTab('projects');
-  else for (const fn of tabHooks) fn(state.tab);
+  else renderBookmarks();
 }
 
 function openSearch() {
@@ -52,6 +51,14 @@ $('query').addEventListener('blur', () => setTimeout(closeSearch, 0));
 for (const btn of document.querySelectorAll('.tab-btn')) {
   btn.addEventListener('click', () => setTab(btn.dataset.tab));
 }
+
+$('tab-switch').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  const next = state.tab === 'projects' ? 'bookmarks' : 'projects';
+  setTab(next);
+  document.querySelector(`.tab-btn[data-tab="${state.tab}"]`).focus();
+});
 
 for (const btn of document.querySelectorAll('.view-btn')) {
   btn.addEventListener('click', async () => {

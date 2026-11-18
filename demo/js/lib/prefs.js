@@ -12,6 +12,7 @@ export function normalizePrefs(raw) {
   return {
     ...src,
     view: src.view === 'list' ? 'list' : 'grid',
+    sitesExpanded: src.sitesExpanded === true,
     sections,
     hiddenSites: Array.isArray(src.hiddenSites) ? src.hiddenSites.filter((u) => typeof u === 'string') : [],
   };

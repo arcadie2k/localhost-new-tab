@@ -13,6 +13,7 @@ const view = {
   editing: null,
   nodes: new Map(),
   token: 0,
+  opened: false,
 };
 
 const BAR_ID = '1';
@@ -58,7 +59,7 @@ function rowInner(node, colIndex, index, extra) {
   if (isBookmarklet(node)) {
     return `<div class="bm-row is-disabled" tabindex="0" ${attrs} data-tip="Bookmarklets only run from Chrome's bookmarks bar">${icon('code', 'bm-folder')}<span class="bm-title">${title}</span>${extra}</div>`;
   }
-  return `<a class="bm-row" href="${esc(node.url)}" ${attrs} data-tip="${esc(node.url)}">${faviconHTML(node.url, displayTitle(node), 'fav-sm')}<span class="bm-title">${title}</span>${extra}</a>`;
+  return `<a class="bm-row" href="${esc(node.url)}" ${attrs}>${faviconHTML(node.url, displayTitle(node), 'fav-sm')}<span class="bm-title">${title}</span>${extra}</a>`;
 }
 
 function captureEditor() {
@@ -84,9 +85,13 @@ function restoreEditor(saved, root) {
 
 function renderColumns() {
   const saved = captureEditor();
+  const box = $('bm-columns');
+  const scrolls = new Map([...box.querySelectorAll('.bm-col')].map((c) => [c.dataset.folder, c.scrollTop]));
+  const prevCount = scrolls.size;
+  const prevLeft = box.scrollLeft;
   const cols = columnsFor(view.tree, view.path);
   view.path = cols.slice(1).map((c) => c.folder.id);
-  $('bm-columns').innerHTML = cols
+  box.innerHTML = cols
     .map((col, i) => {
       const draft = view.editing === `new:${col.folder.id}` ? editorHTML(null, { isNew: true, parentId: col.folder.id }) : '';
       const rows = col.children.map((n, j) => rowHTML(n, i, j)).join('') + draft;
@@ -98,8 +103,12 @@ function renderColumns() {
     .slice(1)
     .map((c, i) => `<button class="bm-crumb" data-depth="${i + 1}">${esc(displayTitle(c.folder))}</button>`)
     .join(`<span class="bm-crumb-sep" aria-hidden="true">${icon('chevron')}</span>`) || '<span class="bm-crumb is-root">Bookmarks</span>';
-  const box = $('bm-columns');
-  box.scrollLeft = box.scrollWidth;
+  box.querySelectorAll('.bm-col').forEach((c) => {
+    const top = scrolls.get(c.dataset.folder);
+    if (top) c.scrollTop = top;
+  });
+  if (cols.length > prevCount) box.scrollLeft = box.scrollWidth;
+  else if (cols.length < prevCount) box.scrollLeft = prevLeft;
   restoreEditor(saved, box);
   if (view.focusAfter) {
     $('bookmarks-view').querySelector(view.focusAfter)?.focus({ preventScroll: true });
@@ -128,11 +137,33 @@ async function renderResults(token) {
   restoreEditor(saved, $('bm-results'));
 }
 
+function applyTree(tree) {
+  view.tree = tree;
+  view.nodes = indexTree(tree);
+  if (!view.opened) {
+    view.opened = true;
+    if (!view.path.length && tree.children?.[0]) view.path = [tree.children[0].id];
+  }
+}
+
+function paint(token) {
+  const searching = Boolean(view.query);
+  $('bm-columns').hidden = searching;
+  if (searching) return renderResults(token);
+  $('bm-results').hidden = true;
+  $('bm-empty').hidden = true;
+  renderColumns();
+}
+
 export async function renderBookmarks() {
-  if (state.tab !== 'bookmarks' || !featureOn('bookmarks') || !api()) return;
+  if (!featureOn('bookmarks') || !api()) return;
   listen();
-  view.query = $('query').value.trim();
   const token = ++view.token;
+  const active = state.tab === 'bookmarks';
+  if (active) {
+    view.query = $('query').value.trim();
+    if (view.tree && !view.query) paint(token);
+  }
   let tree;
   try {
     [tree] = await api().getTree();
@@ -140,15 +171,8 @@ export async function renderBookmarks() {
     return;
   }
   if (token !== view.token) return;
-  view.tree = tree;
-  view.nodes = indexTree(view.tree);
-  const searching = Boolean(view.query);
-  $('bm-columns').hidden = searching;
-  $('bm-crumbs').hidden = searching;
-  if (searching) return renderResults(token);
-  $('bm-results').hidden = true;
-  $('bm-empty').hidden = true;
-  renderColumns();
+  applyTree(tree);
+  if (state.tab === 'bookmarks') paint(token);
 }
 
 function scheduleReload() {
@@ -172,6 +196,10 @@ $('bm-columns').addEventListener('click', (e) => {
   if (!row) return;
   if (document.activeElement === row) view.focusAfter = `.bm-row[data-id="${CSS.escape(row.dataset.id)}"]`;
   openFolder(row.dataset.id, Number(row.dataset.col));
+});
+
+$('bm-new-folder').addEventListener('click', () => {
+  if (state.tab === 'bookmarks' && view.tree) newFolder(targetFolder());
 });
 
 $('bm-crumbs').addEventListener('click', (e) => {
@@ -213,6 +241,7 @@ $('query').addEventListener('input', () => {
 export function resetBookmarks() {
   view.path = [];
   view.query = '';
+  view.opened = false;
 }
 
 export { view as bookmarksView };
@@ -231,12 +260,6 @@ async function newFolder(parentId) {
     toast(e.message);
   }
   renderBookmarks();
-}
-
-function newBookmark(parentId) {
-  closeMenu();
-  view.editing = `new:${parentId}`;
-  renderColumns();
 }
 
 async function saveEdit(form) {
@@ -339,7 +362,6 @@ $('bookmarks-view').addEventListener('click', (e) => {
   if (!el) return;
   const action = el.dataset.bmAction;
   if (action === 'new-folder') newFolder(targetFolder());
-  else if (action === 'new-bookmark') newBookmark(targetFolder());
   else if (action === 'cancel-edit') cancelEdit();
   else if (action === 'menu') {
     const node = view.nodes.get(el.dataset.id);

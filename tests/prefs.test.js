@@ -27,3 +27,9 @@ test('badge until both granted', () => {
   assert.equal(needsBadge({ topSites: true, bookmarks: false }), true);
   assert.equal(needsBadge({ topSites: true, bookmarks: true }), false);
 });
+
+test('sitesExpanded defaults to false and keeps booleans only', () => {
+  assert.equal(normalizePrefs({}).sitesExpanded, false);
+  assert.equal(normalizePrefs({ sitesExpanded: true }).sitesExpanded, true);
+  assert.equal(normalizePrefs({ sitesExpanded: 'yes' }).sitesExpanded, false);
+});
