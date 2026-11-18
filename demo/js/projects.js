@@ -701,9 +701,9 @@ function openChooser(p, trigger, kind) {
 
 document.addEventListener('click', (e) => {
   const actionEl = e.target.closest('[data-action]');
-  const inMenu = e.target.closest('#menu');
+  const inMenu = e.composedPath().includes($('menu'));
   const opensMenu = actionEl && ['menu', 'editor', 'terminal', 'ports'].includes(actionEl.dataset.action);
-  if (!inMenu && !opensMenu) closeMenu();
+  if (!inMenu && !opensMenu && !state.menuTrigger?.contains(e.target)) closeMenu();
   if (!actionEl || inMenu) return;
   const id = actionEl.closest('.card')?.dataset.id;
   const p = id && byId(id);

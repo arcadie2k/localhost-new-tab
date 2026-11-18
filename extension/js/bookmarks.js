@@ -1,6 +1,7 @@
-import { $, esc, icon, state, faviconHTML } from './core.js';
+import { $, esc, icon, state, toast, faviconHTML } from './core.js';
 import { featureOn } from './settings.js';
-import { columnsFor, displayTitle, isBookmarklet } from './lib/bookmark-tree.js';
+import { openPopover, closeMenu, menuItem } from './menu.js';
+import { columnsFor, countBookmarks, displayTitle, isBookmarklet, isFixedNode, normalizeUrl, restoreTree } from './lib/bookmark-tree.js';
 
 const view = {
   tree: null,
@@ -9,7 +10,11 @@ const view = {
   listening: false,
   reloadTimer: null,
   focusAfter: null,
+  editing: null,
+  nodes: new Map(),
 };
+
+const BAR_ID = '1';
 
 function api() {
   return chrome.bookmarks;
@@ -25,17 +30,33 @@ function indexTree(root) {
   return map;
 }
 
+function editorHTML(node, { isNew = false, parentId = '' } = {}) {
+  const hasUrl = isNew || node.url !== undefined;
+  const title = isNew ? '' : node.title || '';
+  return `<li class="bm-item is-editing"><form class="bm-edit" data-id="${esc(isNew ? '' : node.id)}" data-parent="${esc(parentId)}" data-new="${isNew}">
+    <input class="bm-input" name="title" value="${esc(title)}" placeholder="${hasUrl ? 'Name' : 'Folder name'}" aria-label="Name" autocomplete="off" spellcheck="false">
+    ${hasUrl ? `<input class="bm-input" name="url" value="${esc(isNew ? '' : node.url)}" placeholder="https://" aria-label="URL" autocomplete="off" spellcheck="false">` : ''}
+    <div class="bm-edit-actions"><button class="chip-btn is-primary" type="submit">Save</button><button class="chip-btn" type="button" data-bm-action="cancel-edit">Cancel</button></div>
+  </form></li>`;
+}
+
 function rowHTML(node, colIndex, index, extra = '') {
+  if (view.editing === node.id) return editorHTML(node);
+  const more = isFixedNode(node) ? '' : `<button class="bm-more" data-bm-action="menu" data-id="${esc(node.id)}" aria-label="Actions for ${esc(displayTitle(node))}" aria-haspopup="menu">${icon('more')}</button>`;
+  return `<li class="bm-item" data-id="${esc(node.id)}">${rowInner(node, colIndex, index, extra)}${more}</li>`;
+}
+
+function rowInner(node, colIndex, index, extra) {
   const selected = view.path[colIndex] === node.id;
   const attrs = `data-id="${esc(node.id)}" data-col="${colIndex}" data-index="${index}"`;
   const title = esc(displayTitle(node));
   if (!node.url) {
-    return `<li><button class="bm-row is-folder${selected ? ' is-selected' : ''}" ${attrs} aria-expanded="${selected}">${icon('folder', 'bm-folder')}<span class="bm-title">${title}</span>${extra}${icon('chevron', 'bm-chevron')}</button></li>`;
+    return `<button class="bm-row is-folder${selected ? ' is-selected' : ''}" ${attrs} aria-expanded="${selected}">${icon('folder', 'bm-folder')}<span class="bm-title">${title}</span>${extra}${icon('chevron', 'bm-chevron')}</button>`;
   }
   if (isBookmarklet(node)) {
-    return `<li><div class="bm-row is-disabled" tabindex="0" ${attrs} data-tip="Bookmarklets only run from Chrome's bookmarks bar">${icon('code', 'bm-folder')}<span class="bm-title">${title}</span>${extra}</div></li>`;
+    return `<div class="bm-row is-disabled" tabindex="0" ${attrs} data-tip="Bookmarklets only run from Chrome's bookmarks bar">${icon('code', 'bm-folder')}<span class="bm-title">${title}</span>${extra}</div>`;
   }
-  return `<li><a class="bm-row" href="${esc(node.url)}" ${attrs} data-tip="${esc(node.url)}">${faviconHTML(node.url, displayTitle(node), 'fav-sm')}<span class="bm-title">${title}</span>${extra}</a></li>`;
+  return `<a class="bm-row" href="${esc(node.url)}" ${attrs} data-tip="${esc(node.url)}">${faviconHTML(node.url, displayTitle(node), 'fav-sm')}<span class="bm-title">${title}</span>${extra}</a>`;
 }
 
 function renderColumns() {
@@ -43,8 +64,9 @@ function renderColumns() {
   view.path = cols.slice(1).map((c) => c.folder.id);
   $('bm-columns').innerHTML = cols
     .map((col, i) => {
-      const rows = col.children.map((n, j) => rowHTML(n, i, j)).join('');
-      const empty = col.children.length ? '' : '<li class="bm-col-empty">Empty folder</li>';
+      const draft = view.editing === `new:${col.folder.id}` ? editorHTML(null, { isNew: true, parentId: col.folder.id }) : '';
+      const rows = col.children.map((n, j) => rowHTML(n, i, j)).join('') + draft;
+      const empty = rows ? '' : '<li class="bm-col-empty">Empty folder</li>';
       return `<ul class="bm-col" data-folder="${esc(col.folder.id)}" data-col="${i}" aria-label="${esc(displayTitle(col.folder) === 'Untitled' ? 'Bookmarks' : displayTitle(col.folder))}">${rows}${empty}</ul>`;
     })
     .join('');
@@ -54,6 +76,11 @@ function renderColumns() {
     .join(`<span class="bm-crumb-sep" aria-hidden="true">${icon('chevron')}</span>`) || '<span class="bm-crumb is-root">Bookmarks</span>';
   const box = $('bm-columns');
   box.scrollLeft = box.scrollWidth;
+  const input = box.querySelector('.bm-edit .bm-input');
+  if (input) {
+    input.focus({ preventScroll: true });
+    input.select();
+  }
   if (view.focusAfter) {
     box.querySelector(view.focusAfter)?.focus({ preventScroll: true });
     view.focusAfter = null;
@@ -87,6 +114,7 @@ export async function renderBookmarks() {
   } catch {
     return;
   }
+  view.nodes = indexTree(view.tree);
   const searching = Boolean(view.query);
   $('bm-columns').hidden = searching;
   $('bm-crumbs').hidden = searching;
@@ -158,3 +186,150 @@ export function resetBookmarks() {
 }
 
 export { view as bookmarksView };
+
+function targetFolder() {
+  if (!view.path.length) view.path = [BAR_ID];
+  return view.path[view.path.length - 1];
+}
+
+async function newFolder(parentId) {
+  closeMenu();
+  try {
+    const node = await api().create({ parentId, title: 'New folder' });
+    view.editing = node.id;
+  } catch (e) {
+    toast(e.message);
+  }
+  renderBookmarks();
+}
+
+function newBookmark(parentId) {
+  closeMenu();
+  view.editing = `new:${parentId}`;
+  renderColumns();
+}
+
+async function saveEdit(form) {
+  const title = form.elements.title.value.trim();
+  const urlField = form.elements.url;
+  let url;
+  if (urlField) {
+    url = normalizeUrl(urlField.value);
+    if (!url) {
+      urlField.setCustomValidity('Enter a valid URL');
+      urlField.reportValidity();
+      urlField.addEventListener('input', () => urlField.setCustomValidity(''), { once: true });
+      return;
+    }
+  }
+  try {
+    if (form.dataset.new === 'true') {
+      await api().create({ parentId: form.dataset.parent, title: title || (url && new URL(url).hostname) || '', url });
+    } else {
+      const changes = { title };
+      if (urlField) changes.url = url;
+      await api().update(form.dataset.id, changes);
+    }
+  } catch (e) {
+    toast(e.message);
+  }
+  view.editing = null;
+  renderBookmarks();
+}
+
+function cancelEdit() {
+  view.editing = null;
+  renderColumns();
+}
+
+async function removeNode(node) {
+  closeMenu();
+  let snapshot;
+  try {
+    [snapshot] = await api().getSubTree(node.id);
+    if (snapshot.url !== undefined || !snapshot.children?.length) await api().remove(node.id);
+    else await api().removeTree(node.id);
+  } catch (e) {
+    toast(e.message);
+    return;
+  }
+  const name = displayTitle(snapshot);
+  if (snapshot.url !== undefined || !snapshot.children?.length) {
+    toast(`Deleted “${name}”`, {
+      action: { label: 'Undo', run: () => restoreTree(api(), snapshot, snapshot.parentId, snapshot.index).catch((e) => toast(e.message)) },
+    });
+  } else {
+    toast(`Deleted “${name}”`);
+  }
+}
+
+function confirmDelete(node, trigger) {
+  const n = countBookmarks(node);
+  const what = n ? `and its ${n} ${n === 1 ? 'bookmark' : 'bookmarks'}` : 'and everything in it';
+  openPopover(
+    trigger,
+    `<div class="menu-label menu-confirm">Delete “${esc(displayTitle(node))}” ${what}? This can't be undone.</div>
+    <button class="menu-item is-danger" role="menuitem" data-action="confirm-delete">${icon('trash')}<span>Delete</span></button>
+    <button class="menu-item" role="menuitem" data-action="cancel">${icon('back')}<span>Cancel</span></button>`,
+    { id: node.id, kind: 'bm-confirm', onAction: (action) => (action === 'confirm-delete' ? removeNode(node) : closeMenu()) }
+  );
+}
+
+function openRowMenu(node, trigger) {
+  if (state.menuFor === node.id && state.menuKind === 'bm') return closeMenu();
+  const items = [
+    node.url !== undefined ? menuItem('edit', 'edit', 'Edit') : menuItem('rename', 'edit', 'Rename'),
+    menuItem('new-folder-here', 'folderPlus', 'New folder here'),
+    '<div class="menu-sep" role="separator"></div>',
+    menuItem('delete', 'trash', 'Delete'),
+  ];
+  openPopover(trigger, items.join(''), {
+    id: node.id,
+    kind: 'bm',
+    onAction: (action) => {
+      if (action === 'edit' || action === 'rename') {
+        closeMenu();
+        view.editing = node.id;
+        return renderColumns();
+      }
+      if (action === 'new-folder-here') return newFolder(node.parentId);
+      if (action === 'delete') {
+        if (node.url === undefined && node.children?.length) return confirmDelete(node, trigger);
+        return removeNode(node);
+      }
+    },
+  });
+}
+
+$('bookmarks-view').addEventListener('click', (e) => {
+  const el = e.target.closest('[data-bm-action]');
+  if (!el) return;
+  const action = el.dataset.bmAction;
+  if (action === 'new-folder') newFolder(targetFolder());
+  else if (action === 'new-bookmark') newBookmark(targetFolder());
+  else if (action === 'cancel-edit') cancelEdit();
+  else if (action === 'menu') {
+    const node = view.nodes.get(el.dataset.id);
+    if (node) openRowMenu(node, el);
+  }
+});
+
+$('bookmarks-view').addEventListener('contextmenu', (e) => {
+  const item = e.target.closest('.bm-item[data-id]');
+  const node = item && view.nodes.get(item.dataset.id);
+  if (!node || isFixedNode(node)) return;
+  e.preventDefault();
+  openRowMenu(node, item.querySelector('.bm-more') || item);
+});
+
+$('bookmarks-view').addEventListener('submit', (e) => {
+  e.preventDefault();
+  saveEdit(e.target);
+});
+
+$('bookmarks-view').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && e.target.closest('.bm-edit')) {
+    e.stopPropagation();
+    cancelEdit();
+  }
+});

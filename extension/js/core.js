@@ -16,6 +16,9 @@ export const ICONS = {
   server: '<rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01"/><path d="M6 17h.01"/>',
   phone: '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
   hide: '<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>',
+  edit: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  folderPlus: '<path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
   spinner: '<path d="M21 12a9 9 0 1 1-6.22-8.56"/>',
 };
 
@@ -58,12 +61,23 @@ export function ago(ts) {
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function toast(msg) {
+export function toast(msg, { action } = {}) {
   const el = $('toast');
   el.textContent = msg;
+  el.classList.toggle('has-action', Boolean(action));
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = action.label;
+    btn.addEventListener('click', () => {
+      el.classList.remove('is-visible');
+      action.run();
+    });
+    el.append(' ', btn);
+  }
   el.classList.add('is-visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 3600);
+  toastTimer = setTimeout(() => el.classList.remove('is-visible'), action ? 6000 : 3600);
 }
 
 /* Tooltips: short delay when cold, instant while moving between neighbours */

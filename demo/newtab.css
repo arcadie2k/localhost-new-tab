@@ -692,6 +692,137 @@ button {
   color: var(--graphite);
 }
 
+.bm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--pebble);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--iron);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.chip-btn .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.chip-btn:hover {
+  background: var(--press-fill);
+  color: var(--ink);
+}
+
+.chip-btn.is-primary {
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.bm-item {
+  position: relative;
+}
+
+.bm-more {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--graphite);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.bm-more .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.bm-item:hover .bm-more,
+.bm-more:focus-visible,
+.bm-more[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.bm-more:hover {
+  color: var(--ink);
+}
+
+.bm-item:hover .bm-row {
+  padding-right: 36px;
+}
+
+.bm-item:hover .bm-chevron {
+  visibility: hidden;
+}
+
+.bm-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--whisper);
+}
+
+.bm-input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+  outline: none;
+}
+
+.bm-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.bm-edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.bm-edit-actions .chip-btn {
+  height: 28px;
+}
+
+.menu-confirm {
+  max-width: 260px;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.menu-item.is-danger {
+  color: #e5484d;
+}
+
 /* Settings */
 
 .settings {
@@ -1719,6 +1850,23 @@ a.port:hover {
 .toast.is-visible {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
+}
+
+.toast.has-action.is-visible {
+  pointer-events: auto;
+}
+
+.toast-action {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 /* Narrow */
