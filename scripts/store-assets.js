@@ -127,7 +127,9 @@ media['icon:billing-api'] = { url: favicon('B', '#8b5cf6'), at: now };
 
 const css = fs.readFileSync(path.join(ext, 'newtab.css'), 'utf8');
 const html = fs.readFileSync(path.join(ext, 'newtab.html'), 'utf8');
-const js = fs.readFileSync(path.join(ext, 'newtab.js'), 'utf8');
+const DEMO_ONLY = process.argv.includes('--demo-only');
+const MODULE_TAG = '<script type="module" src="js/main.js"></script>';
+const copyModules = (dir) => fs.cpSync(path.join(ext, 'js'), path.join(dir, 'js'), { recursive: true });
 
 const DEMO_APPS = { editors: ['Visual Studio Code', 'Cursor', 'Zed'], terminals: ['Terminal', 'iTerm', 'Warp'] };
 
@@ -137,7 +139,7 @@ function newtab(name, scheme, after = '', apps = DEMO_APPS, extraMedia = {}) {
   fs.cpSync(path.join(ext, 'fonts'), path.join(dir, 'fonts'), { recursive: true });
   const themed = css.replace('@media (prefers-color-scheme: dark)', scheme === 'dark' ? '@media all' : '@media not all');
   fs.writeFileSync(path.join(dir, 'newtab.css'), themed + '\n.toast{display:none}*,*::before,*::after{animation:none!important;transition:none!important}');
-  fs.writeFileSync(path.join(dir, 'newtab.js'), js);
+  copyModules(dir);
   fs.copyFileSync(path.join(ext, 'theme.js'), path.join(dir, 'theme.js'));
   fs.writeFileSync(path.join(dir, 'mock.js'), `
     const DATA = ${JSON.stringify({ projects, apps })};
@@ -150,9 +152,42 @@ function newtab(name, scheme, after = '', apps = DEMO_APPS, extraMedia = {}) {
   fs.writeFileSync(path.join(dir, 'after.js'), `setTimeout(() => { ${after} }, 400);`);
   fs.writeFileSync(
     path.join(dir, 'newtab.html'),
-    html.replace('<script src="newtab.js"></script>', '<script src="mock.js"></script><script src="newtab.js"></script><script src="after.js"></script>')
+    html.replace(MODULE_TAG, `<script src="mock.js"></script>${MODULE_TAG}<script type="module" src="after.js"></script>`)
   );
   return path.join(dir, 'newtab.html');
+}
+
+/* Interactive demo (also served by GitHub Pages) */
+
+const demoDir = path.join(root, 'demo');
+fs.rmSync(demoDir, { recursive: true, force: true });
+fs.mkdirSync(path.join(demoDir, 'icons'), { recursive: true });
+fs.cpSync(path.join(ext, 'fonts'), path.join(demoDir, 'fonts'), { recursive: true });
+for (const size of [16, 32]) fs.copyFileSync(path.join(ext, 'icons', `icon${size}.png`), path.join(demoDir, 'icons', `icon${size}.png`));
+fs.writeFileSync(path.join(demoDir, 'newtab.css'), css + '\n' + fs.readFileSync(path.join(__dirname, 'demo', 'demo.css'), 'utf8'));
+copyModules(demoDir);
+fs.copyFileSync(path.join(ext, 'theme.js'), path.join(demoDir, 'theme.js'));
+fs.copyFileSync(path.join(__dirname, 'demo', 'mock.js'), path.join(demoDir, 'mock.js'));
+fs.writeFileSync(path.join(demoDir, 'data.js'), `window.DEMO = ${JSON.stringify({
+  builtAt: now,
+  projects,
+  media,
+  apps: { editors: ['Visual Studio Code', 'Cursor', 'Zed'], terminals: ['Terminal', 'iTerm', 'Warp'] },
+})};\n`);
+fs.writeFileSync(path.join(demoDir, 'index.html'), html
+  .replace('<title>New Tab</title>', `<title>Localhost New Tab demo</title>
+  <meta name="description" content="Every localhost project you've run, one new tab away. Interactive demo with fictional projects.">
+  <meta property="og:title" content="Localhost New Tab">
+  <meta property="og:description" content="Every localhost project you've run, one new tab away.">
+  <meta property="og:image" content="${PAGES_URL}/assets/social/og-1200x630.png">
+  <meta name="twitter:card" content="summary_large_image">`)
+  .replace('<body>', `<body>
+  <p class="demo-banner">Interactive demo with fictional projects. The real extension reads your own localhost. <a href="${REPO_URL}">Get it on GitHub</a></p>`)
+  .replace(MODULE_TAG, `<script src="data.js"></script>\n  <script src="mock.js"></script>\n  ${MODULE_TAG}`));
+
+if (DEMO_ONLY) {
+  console.log('demo rebuilt');
+  process.exit(0);
 }
 
 console.log('rendering screenshots…');
@@ -215,34 +250,6 @@ closeUp('4-editor', 'Or in your code editor.', 'Every editor you have installed 
   const p = byId('atlas-dashboard'), btn = ${card('atlas-dashboard', 'editor')};
   openChooser(p, btn, 'editor');
   closeMenu = () => {};`, [360, 570]);
-
-/* Interactive demo (also served by GitHub Pages) */
-
-const demoDir = path.join(root, 'demo');
-fs.rmSync(demoDir, { recursive: true, force: true });
-fs.mkdirSync(path.join(demoDir, 'icons'), { recursive: true });
-fs.cpSync(path.join(ext, 'fonts'), path.join(demoDir, 'fonts'), { recursive: true });
-for (const size of [16, 32]) fs.copyFileSync(path.join(ext, 'icons', `icon${size}.png`), path.join(demoDir, 'icons', `icon${size}.png`));
-fs.writeFileSync(path.join(demoDir, 'newtab.css'), css + '\n' + fs.readFileSync(path.join(__dirname, 'demo', 'demo.css'), 'utf8'));
-fs.writeFileSync(path.join(demoDir, 'newtab.js'), js);
-fs.copyFileSync(path.join(ext, 'theme.js'), path.join(demoDir, 'theme.js'));
-fs.copyFileSync(path.join(__dirname, 'demo', 'mock.js'), path.join(demoDir, 'mock.js'));
-fs.writeFileSync(path.join(demoDir, 'data.js'), `window.DEMO = ${JSON.stringify({
-  builtAt: now,
-  projects,
-  media,
-  apps: { editors: ['Visual Studio Code', 'Cursor', 'Zed'], terminals: ['Terminal', 'iTerm', 'Warp'] },
-})};\n`);
-fs.writeFileSync(path.join(demoDir, 'index.html'), html
-  .replace('<title>New Tab</title>', `<title>Localhost New Tab demo</title>
-  <meta name="description" content="Every localhost project you've run, one new tab away. Interactive demo with fictional projects.">
-  <meta property="og:title" content="Localhost New Tab">
-  <meta property="og:description" content="Every localhost project you've run, one new tab away.">
-  <meta property="og:image" content="${PAGES_URL}/assets/social/og-1200x630.png">
-  <meta name="twitter:card" content="summary_large_image">`)
-  .replace('<body>', `<body>
-  <p class="demo-banner">Interactive demo with fictional projects. The real extension reads your own localhost. <a href="${REPO_URL}">Get it on GitHub</a></p>`)
-  .replace('<script src="newtab.js"></script>', '<script src="data.js"></script>\n  <script src="mock.js"></script>\n  <script src="newtab.js"></script>'));
 
 /* README hero + social images */
 
