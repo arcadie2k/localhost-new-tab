@@ -129,7 +129,9 @@ const css = fs.readFileSync(path.join(ext, 'newtab.css'), 'utf8');
 const html = fs.readFileSync(path.join(ext, 'newtab.html'), 'utf8');
 const js = fs.readFileSync(path.join(ext, 'newtab.js'), 'utf8');
 
-function newtab(name, scheme, after = '') {
+const DEMO_APPS = { editors: ['Visual Studio Code', 'Cursor', 'Zed'], terminals: ['Terminal', 'iTerm', 'Warp'] };
+
+function newtab(name, scheme, after = '', apps = DEMO_APPS, extraMedia = {}) {
   const dir = path.join(tmp, name);
   fs.mkdirSync(dir, { recursive: true });
   fs.cpSync(path.join(ext, 'fonts'), path.join(dir, 'fonts'), { recursive: true });
@@ -138,8 +140,8 @@ function newtab(name, scheme, after = '') {
   fs.writeFileSync(path.join(dir, 'newtab.js'), js);
   fs.copyFileSync(path.join(ext, 'theme.js'), path.join(dir, 'theme.js'));
   fs.writeFileSync(path.join(dir, 'mock.js'), `
-    const DATA = ${JSON.stringify({ projects, apps: { editors: ['Visual Studio Code', 'Cursor', 'Zed'], terminals: ['Terminal', 'iTerm', 'Warp'] } })};
-    const MEDIA = ${JSON.stringify(media)};
+    const DATA = ${JSON.stringify({ projects, apps })};
+    const MEDIA = ${JSON.stringify({ ...media, ...extraMedia })};
     document.startViewTransition = undefined;
     window.chrome = {
       runtime: { id: 'store', lastError: null, sendNativeMessage(_h, msg, cb) { setTimeout(() => cb(msg.type === 'scan' ? JSON.parse(JSON.stringify(DATA)) : { ok: true }), 0); } },
@@ -167,6 +169,52 @@ shoot(
   1280,
   800
 );
+
+/* LinkedIn carousel, 1920x1080 */
+
+const carousel = path.join(root, 'assets', 'social', 'linkedin');
+fs.mkdirSync(carousel, { recursive: true });
+const card = (id, action) => `document.querySelector('.card[data-id="${id}"] [data-action="${action}"]')`;
+const mark = fs.readFileSync(path.join(root, 'assets', 'icons', 'icon512.svg'), 'utf8');
+const dataUrl = (file) => `data:image/png;base64,${fs.readFileSync(file).toString('base64')}`;
+const slideCss = `${FONTS}
+  body{width:1920px;height:1080px;background:#f1eee9;color:#111;display:flex;overflow:hidden}
+  .copy{width:700px;padding:120px 0 0 112px;flex:none}.mark svg{width:72px;height:72px;display:block}
+  h1{font-size:76px;line-height:1;letter-spacing:-2.3px;font-weight:300;margin-top:56px;text-wrap:balance}
+  p{font-size:26px;line-height:1.45;letter-spacing:-.26px;color:#414141;margin-top:36px;max-width:520px;text-wrap:pretty}
+  .shot{margin:120px 0 0 24px;border:1px solid #dedbd6;border-radius:6px;align-self:flex-start;flex:none;background-repeat:no-repeat}`;
+const slide = (name, title, text, shot) => shoot(page(name, `
+  <div class="copy"><div class="mark">${mark}</div><h1>${title}</h1><p>${text}</p></div>${shot}`, slideCss), path.join(carousel, `${name}.png`), 1920, 1080);
+const TERMINALS = new Set(['Terminal', 'iTerm', 'Warp', 'Ghostty', 'Alacritty', 'kitty', 'WezTerm', 'Hyper']);
+let localIcons = {};
+try {
+  localIcons = JSON.parse(execFileSync('node', [path.join(root, 'host', 'host.js'), '--cli', '{"type":"appIcons"}'], { encoding: 'utf8' })).icons || {};
+} catch {}
+const localNames = Object.keys(localIcons);
+const localApps = localNames.length
+  ? { editors: localNames.filter((n) => !TERMINALS.has(n)), terminals: localNames.filter((n) => TERMINALS.has(n)) }
+  : DEMO_APPS;
+const closeUp = (name, title, text, after, [x, y], zoom = 1.7) => {
+  const file = path.join(tmp, `${name}-full.png`);
+  shoot(newtab(name, 'dark', `setTimeout(() => { ${after} }, 1200);`, localApps, { appIcons: { icons: localIcons } }), file, 1280, 1000, 2);
+  const w = 1196, h = 960;
+  slide(name, title, text, `<div class="shot" style="width:${w + 40}px;height:${h + 40}px;background-color:#111112;background-image:url(${dataUrl(file)});background-size:${1280 * zoom}px auto;background-position:${w / 2 - x * zoom}px ${h / 2 - y * zoom}px"></div>`);
+};
+
+shoot(newtab('2-overview', 'light'), path.join(carousel, '2-overview.png'), 1280, 720, 1.5);
+shoot(newtab('1-title', 'light'), path.join(tmp, '1-title-full.png'), 1280, 800, 1.5);
+slide('1-title', 'Every project you run on localhost, on your new tab.',
+  'Start and stop dev servers. Open any project in Finder, your editor or a terminal in one click.',
+  `<img class="shot" src="${dataUrl(path.join(tmp, '1-title-full.png'))}" style="width:1600px" alt="">`);
+closeUp('3-terminal', 'Open it in your terminal.', 'Pick any terminal you have installed, right from the card.', `
+  const p = byId('field-notes'), btn = ${card('field-notes', 'menu')};
+  openMenu(p, btn);
+  openChooser(p, btn, 'terminal');
+  closeMenu = () => {};`, [640, 570]);
+closeUp('4-editor', 'Or in your code editor.', 'Every editor you have installed is one click away. The folder button opens it in Finder.', `
+  const p = byId('atlas-dashboard'), btn = ${card('atlas-dashboard', 'editor')};
+  openChooser(p, btn, 'editor');
+  closeMenu = () => {};`, [360, 570]);
 
 /* Interactive demo (also served by GitHub Pages) */
 

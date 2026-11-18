@@ -6,7 +6,7 @@
 
 <p align="center">
   Every project you've run on localhost, one new tab away.<br>
-  <a href="https://arcadie2k.github.io/localhost-new-tab/demo/"><strong>Try the live demo</strong></a> · <a href="#install">Install</a> · <a href="#how-it-works">How it works</a>
+  <a href="https://chromewebstore.google.com/detail/iafmjppjfdddcnlanldpmjejhpbikdem"><strong>Chrome Web Store</strong></a> · <a href="https://arcadie2k.github.io/localhost-new-tab/demo/">Live demo</a> · <a href="#install">Install</a> · <a href="#how-it-works">How it works</a>
 </p>
 
 <picture>
@@ -38,44 +38,30 @@ So I made it useful: every project I've started on localhost, running or not, wi
 
 You need **macOS**, **Node.js 18 or newer** and a Chromium browser: **Chrome**, Brave, Arc or Chromium.
 
-**1. Get the code**
+### From the Chrome Web Store
+
+1. Add [Localhost New Tab](https://chromewebstore.google.com/detail/iafmjppjfdddcnlanldpmjejhpbikdem) to Chrome.
+2. Open a new tab. It shows a one-line command with your extension ID already filled in. Click **Copy command** and paste it in Terminal.
+3. Reload the tab. Any dev server you have running shows up right away.
+
+The command downloads the helper for this exact version, installs it to `~/.localhost-new-tab/bin`, registers it with every supported browser it finds and cleans up after itself. [Read the script](install.sh) first if you like; it's short.
+
+### From source
 
 ```bash
 git clone https://github.com/arcadie2k/localhost-new-tab.git
 cd localhost-new-tab
 ```
 
-**2. Load the extension**
-
-Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and select the `extension/` folder inside the repo.
-
-**3. Install the helper**
-
-Open a new tab. You'll see a setup screen with a one-line command, already filled in with your extension ID. Click **Copy command** and paste it in Terminal:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/arcadie2k/localhost-new-tab/v1.0.0/install.sh | sh -s -- <your-extension-id>
-```
-
-It downloads the helper for this exact version, installs it to `~/.localhost-new-tab/bin`, registers it with every supported browser it finds and cleans up after itself. [Read the script](install.sh) first if you like; it's short.
-
-Since you cloned the repo, running it locally does the same thing without downloading:
+Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the `extension/` folder. Then install the helper from the clone, using the ID shown on `chrome://extensions`:
 
 ```bash
 ./install.sh <your-extension-id>
 ```
 
-**4. Done**
-
-Reload the new tab. Any dev server you have running shows up right away, and new ones appear the next time you open a tab.
-
 ### Updating
 
-```bash
-git pull
-```
-
-Then click the reload icon on the extension in `chrome://extensions`, and run `./install.sh <your-extension-id>` again so the helper is updated too.
+The store version of the extension updates itself; the helper doesn't. When a release changes the helper, its release notes say so, and running the install command again updates it. From source: `git pull`, click the reload icon on the extension in `chrome://extensions`, and run `./install.sh <your-extension-id>` again so the helper is updated too.
 
 ### Troubleshooting
 
@@ -168,7 +154,6 @@ Ideas for where the new tab goes next. Open an issue if you want one of them soo
 
 - [ ] **Clocks**: a digital or classic analog clock in the header, plus extra time zones
 - [ ] **Bookmarks in folders**: your most used links grouped next to your projects
-- [ ] **Chrome Web Store** release
 - [ ] **Helper version check**, so the new tab tells you when to update the helper
 - [ ] **Windows and Linux** support for the helper
 - [ ] **Project notes and tags**, to remember what a half-finished prototype was for

@@ -19,34 +19,23 @@ Every localhost project you've run, one new tab away.
 
 **Description**
 
+No lists of framework, tool or editor names: the store rejected v1.0.0 for "excessive keywords" over one.
+
 ```
-Localhost New Tab turns every new tab into a dashboard of the projects you run on localhost.
+Your new tab, turned into a list of every project you've run on localhost.
 
-If you start a lot of side projects, prototypes and client apps, you lose track of them fast: which one is on port 3000, which one is still running, where the folder even is. Localhost New Tab remembers every dev server you have run and shows them as a grid with a live preview of each app.
+If you start lots of side projects and prototypes, you forget which one runs on which port and where its folder is. This extension remembers them for you.
 
-WHAT YOU GET
-• Every local project in one place, running or not, with its folder, framework and ports
-• Live page previews so you recognise projects at a glance
-• Start and stop dev servers from the new tab (uses your project's own dev script with npm, pnpm, yarn or bun)
-• Open a project in Finder, VS Code, Cursor, Zed or your terminal in one click
-• APIs, background agents and Expo / React Native bundlers are recognised automatically and shown as compact Services, separate from your web apps
-• Port history: if two projects used the same port, both stay listed and you get a clear "stop the other one and start" choice
-• Instant filter by name, folder, framework or port (press / to search)
-• Works with Next.js, Vite, Expo, Astro, Nuxt, SvelteKit, Remix, Angular, Express, NestJS, Django, Flask and anything else that listens on a localhost port
-• Light and dark mode, keyboard friendly, respects reduced motion
+• See every local project, running or not, with a live preview
+• Start and stop dev servers from the new tab
+• Open a project's folder, code editor or terminal in one click
+• Search, pin, grid or list view, light and dark mode
 
-HOW IT WORKS
-Browsers cannot see local processes, so the extension talks to a small helper that you install once. The helper reads which ports are listening on your machine (via lsof), maps each one to its project folder and starts or stops dev servers when you ask. Chrome launches it only when the new tab needs it. Nothing runs in the background besides a once-a-minute port check.
+Needs macOS, Node.js 18+ and a small helper you install once. The new tab shows the exact command.
 
-REQUIREMENTS
-• macOS
-• Node.js 18 or newer (for the helper)
-• One-time helper install: the new tab page shows the exact command after you add the extension
+Private by design: everything stays on your computer. No server, no analytics, no account.
 
-PRIVACY
-Everything stays on your computer. The extension has no server, no analytics and no account. Project history lives in a local file in your home folder and previews are stored in Chrome's local extension storage. Removing the extension opens a page with one command that deletes the helper and all its data. The extension can only access http://localhost and http://127.0.0.1 pages.
-
-Made for developers who start more projects than they can remember.
+Open source: https://github.com/arcadie2k/localhost-new-tab
 ```
 
 **Category**: Developer Tools
@@ -68,12 +57,11 @@ Dacă pornești multe proiecte, prototipuri și aplicații pentru clienți, pier
 CE PRIMEȘTI
 • Toate proiectele locale într-un singur loc, pornite sau nu, cu folder, framework și porturi
 • Previzualizări live ale paginilor, ca să recunoști proiectele dintr-o privire
-• Pornești și oprești serverele direct din tabul nou (folosește scriptul dev al proiectului, cu npm, pnpm, yarn sau bun)
-• Deschizi proiectul în Finder, VS Code, Cursor, Zed sau terminal dintr-un click
+• Pornești și oprești serverele direct din tabul nou (folosește scriptul dev al proiectului)
+• Deschizi proiectul în Finder, editorul de cod sau terminal dintr-un click
 • API-urile, agenții care rulează în fundal și bundler-ele Expo / React Native sunt recunoscute automat și apar separat, ca servicii compacte
 • Istoric de porturi: dacă două proiecte au folosit același port, ambele rămân în listă, iar la pornire primești opțiunea să-l oprești pe celălalt
 • Căutare instant după nume, folder, framework sau port (apasă / pentru căutare)
-• Merge cu Next.js, Vite, Expo, Astro, Nuxt, SvelteKit, Remix, Angular, Express, NestJS, Django, Flask și orice altceva ascultă pe un port localhost
 • Mod luminos și întunecat, scurtături de tastatură, respectă setarea de mișcare redusă
 
 CUM FUNCȚIONEAZĂ
