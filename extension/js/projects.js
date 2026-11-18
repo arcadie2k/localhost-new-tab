@@ -1,5 +1,6 @@
 import { $, icon, esc, ago, toast, state } from './core.js';
 import { openPopover, closeMenu, menuItem } from './menu.js';
+import { normalizePrefs, isSectionOn } from './lib/prefs.js';
 
 const HOST = 'com.arcadie.localhost_newtab';
 const POLL_MS = 3000;
@@ -301,6 +302,14 @@ export function matches(p) {
   );
 }
 
+const PROJECT_SECTIONS = ['pinned', 'running', 'services', 'recent'];
+
+export function syncTools() {
+  const count = state.projects.length;
+  $('search').hidden = state.tab === 'projects' && (state.setup || count < 2);
+  $('view-toggle').hidden = state.setup || !count;
+}
+
 export function render() {
   const all = state.projects;
   const isUp = (p) => ['running', 'starting'].includes(effectiveStatus(p)) || state.pending.get(p.id) === 'stopping';
@@ -318,16 +327,19 @@ export function render() {
     ? `${all.length} ${all.length === 1 ? 'project' : 'projects'} on localhost`
     : 'Start a dev server anywhere in your home folder and it shows up here.';
 
-  $('search').hidden = all.length < 2;
-  $('tools').hidden = !all.length;
+  state.setup = false;
+  syncTools();
   $('app').dataset.view = state.view;
   for (const btn of document.querySelectorAll('.view-btn')) btn.setAttribute('aria-pressed', String(btn.dataset.view === state.view));
   $('setup').hidden = true;
 
-  const pinnedShown = pinned.filter(matches);
-  const servicesShown = services.filter(matches);
-  const runningShown = running.filter(matches);
-  const recentShown = recent.filter(matches);
+  const prefs = normalizePrefs(state.media.prefs);
+  const shown = (id, list) => (isSectionOn(prefs, id) ? list.filter(matches) : []);
+  const pinnedShown = shown('pinned', pinned);
+  const servicesShown = shown('services', services);
+  const runningShown = shown('running', running);
+  const recentShown = shown('recent', recent);
+  const anyOff = PROJECT_SECTIONS.some((id) => !isSectionOn(prefs, id));
 
   const apply = () => {
     $('section-services').hidden = !servicesShown.length;
@@ -346,7 +358,8 @@ export function render() {
     const empty = $('empty');
     empty.hidden = !all.length || pinnedShown.length || runningShown.length || servicesShown.length || recentShown.length;
     if (!empty.hidden) {
-      empty.textContent = `Nothing matches “${state.query}”.`;
+      $('empty-text').textContent = state.query ? `Nothing matches “${state.query}”.` : anyOff ? 'All sections are hidden.' : '';
+      $('empty-settings').hidden = Boolean(state.query) || !anyOff;
     }
   };
 
@@ -372,8 +385,8 @@ export function render() {
 export function renderSetup(err) {
   $('headline').textContent = 'Connect the helper.';
   $('lede').textContent = 'One command, once.';
-  $('search').hidden = true;
-  $('tools').hidden = true;
+  state.setup = true;
+  syncTools();
   $('section-pinned').hidden = true;
   $('section-services').hidden = true;
   $('section-running').hidden = true;
@@ -698,12 +711,13 @@ document.addEventListener('click', (e) => {
 });
 
 $('query').addEventListener('input', (e) => {
+  if (state.tab !== 'projects') return;
   state.query = e.target.value.trim();
   render();
 });
 
 $('query').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
+  if (e.key === 'Enter' && state.tab === 'projects') {
     const first = document.querySelector('.grid .card a.thumb, .grid .card a.port');
     if (first) location.href = first.href;
   }
@@ -718,9 +732,9 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.target === $('query')) {
       e.target.value = '';
-      state.query = '';
+      e.target.dispatchEvent(new Event('input'));
       e.target.blur();
-      return render();
+      return;
     }
   }
   if (e.key === 'Enter' && e.target.matches('[data-role="command"]')) {

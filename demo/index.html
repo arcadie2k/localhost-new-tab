@@ -24,21 +24,21 @@
         <h1 class="headline" id="headline">&nbsp;</h1>
         <p class="lede" id="lede">&nbsp;</p>
       </div>
-      <div class="tools" id="tools" hidden>
-      <div class="view-toggle" role="group" aria-label="Layout">
-        <button class="view-btn" data-view="grid" aria-pressed="true" aria-label="Grid view" data-tip="Grid"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
-        <button class="view-btn" data-view="list" aria-pressed="false" aria-label="List view" data-tip="List"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+      <div class="tools" id="tools">
+      <div class="seg tab-switch" id="tab-switch" role="tablist" aria-label="View" hidden>
+        <button class="seg-btn tab-btn" role="tab" data-tab="projects" aria-selected="true">Projects</button>
+        <button class="seg-btn tab-btn" role="tab" data-tab="bookmarks" aria-selected="false">Bookmarks</button>
       </div>
-      <div class="theme-toggle" role="group" aria-label="Theme">
-        <button class="theme-btn" data-theme-choice="auto" aria-pressed="true" aria-label="Match system theme" data-tip="Auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></button>
-        <button class="theme-btn" data-theme-choice="light" aria-pressed="false" aria-label="Light theme" data-tip="Light"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
-        <button class="theme-btn" data-theme-choice="dark" aria-pressed="false" aria-label="Dark theme" data-tip="Dark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <div class="seg view-toggle" id="view-toggle" role="group" aria-label="Layout" hidden>
+        <button class="seg-btn view-btn" data-view="grid" aria-pressed="true" aria-label="Grid view" data-tip="Grid"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+        <button class="seg-btn view-btn" data-view="list" aria-pressed="false" aria-label="List view" data-tip="List"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
       </div>
       <label class="search" id="search" hidden>
         <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.75"/><path d="m10.5 10.5 3.25 3.25"/></svg>
         <input id="query" type="text" placeholder="Search projects" autocomplete="off" spellcheck="false" aria-label="Search projects">
         <kbd class="search-key" aria-hidden="true">/</kbd>
       </label>
+      <button class="icon-btn settings-btn" id="settings-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" aria-label="Settings" data-tip="Settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span class="badge-dot" id="settings-badge" hidden></span></button>
       </div>
       </div>
     </header>
@@ -66,7 +66,7 @@
       <ul class="grid" id="grid-recent"></ul>
     </section>
 
-    <p class="empty" id="empty" hidden></p>
+    <div class="empty" id="empty" hidden><p class="empty-text" id="empty-text"></p><button class="btn btn-ghost" id="empty-settings" hidden>Open settings</button></div>
 
     <section class="setup" id="setup" hidden>
       <p class="setup-text">The new tab needs a small helper on your Mac to read ports and start or stop projects. Paste this in Terminal once, then reload this tab. It needs Node.js 18 or newer.</p>
@@ -81,6 +81,29 @@
     </div>
   </main>
 
+  <div class="settings" id="settings" role="dialog" aria-label="Settings" hidden>
+    <div class="settings-group">
+      <div class="settings-label">Theme</div>
+      <div class="seg theme-toggle" role="group" aria-label="Theme">
+        <button class="seg-btn theme-btn" data-theme-choice="auto" aria-pressed="true">Auto</button>
+        <button class="seg-btn theme-btn" data-theme-choice="light" aria-pressed="false">Light</button>
+        <button class="seg-btn theme-btn" data-theme-choice="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Extras</div>
+      <label class="switch-row"><span>Most visited sites</span><input type="checkbox" role="switch" data-section="mostVisited"></label>
+      <label class="switch-row"><span>Bookmarks tab</span><input type="checkbox" role="switch" data-section="bookmarks"></label>
+      <button class="link-btn" id="unhide-sites" hidden>Show hidden sites again</button>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Projects</div>
+      <label class="switch-row"><span>Pinned</span><input type="checkbox" role="switch" data-section="pinned"></label>
+      <label class="switch-row"><span>Running</span><input type="checkbox" role="switch" data-section="running"></label>
+      <label class="switch-row"><span>Services</span><input type="checkbox" role="switch" data-section="services"></label>
+      <label class="switch-row"><span>Recent</span><input type="checkbox" role="switch" data-section="recent"></label>
+    </div>
+  </div>
   <div class="menu" id="menu" role="menu" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="tooltip" id="tooltip" role="tooltip" hidden></div>

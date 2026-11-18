@@ -23,6 +23,8 @@ export const icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 2
 export const $ = (id) => document.getElementById(id);
 
 export const state = {
+  tab: 'projects',
+  setup: false,
   projects: [],
   apps: {},
   query: '',
