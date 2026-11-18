@@ -21,7 +21,7 @@ export function isBookmarklet(node) {
 }
 
 export function isFixedNode(node) {
-  return node.id === '0' || node.parentId === '0';
+  return node.id === '0' || node.parentId === '0' || Boolean(node.unmodifiable);
 }
 
 export function countBookmarks(node) {
@@ -41,11 +41,14 @@ export async function restoreTree(api, snapshot, parentId, index) {
 
 export function normalizeUrl(raw) {
   const v = raw.trim();
-  if (!v || /\s/.test(v)) return null;
-  const withScheme = /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(v) ? v : `https://${v}`;
+  if (!v) return null;
+  if (/^javascript:/i.test(v)) return v;
+  if (/\s/.test(v)) return null;
+  const hasScheme = /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(v);
+  const withScheme = hasScheme ? v : `https://${v}`;
   try {
     const u = new URL(withScheme);
-    if (/^https?:$/.test(u.protocol) && !u.hostname.includes('.') && u.hostname !== 'localhost') return null;
+    if (!hasScheme && !u.hostname.includes('.') && u.hostname !== 'localhost') return null;
     return withScheme;
   } catch {
     return null;

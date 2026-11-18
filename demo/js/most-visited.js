@@ -47,14 +47,25 @@ async function hideSite(url) {
   renderMostVisited();
 }
 
-$('most-visited').addEventListener('contextmenu', (e) => {
-  const chip = e.target.closest('.site-chip');
-  if (!chip) return;
-  e.preventDefault();
+function openChipMenu(chip) {
   const url = chip.dataset.url;
   openPopover(chip, `<button class="menu-item" role="menuitem" data-action="hide-site">${icon('hide')}<span>Hide</span></button>`, {
     id: url,
     kind: 'site',
     onAction: (action) => action === 'hide-site' && hideSite(url),
   });
+}
+
+$('most-visited').addEventListener('contextmenu', (e) => {
+  const chip = e.target.closest('.site-chip');
+  if (!chip) return;
+  e.preventDefault();
+  openChipMenu(chip);
+});
+
+$('most-visited').addEventListener('keydown', (e) => {
+  const chip = e.target.closest('.site-chip');
+  if (!chip || !((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu' || e.key === 'Delete' || e.key === 'Backspace')) return;
+  e.preventDefault();
+  openChipMenu(chip);
 });

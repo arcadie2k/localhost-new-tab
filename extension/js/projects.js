@@ -364,7 +364,7 @@ export function render() {
   };
 
   const layout = [pinnedShown, runningShown, servicesShown, recentShown].map((list) => list.map((p) => p.id).join(',')).join('|');
-  const animate = state.loaded && layout !== state.layout && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const animate = state.tab === 'projects' && state.loaded && layout !== state.layout && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches;
   state.layout = layout;
   if (animate) {
     closeMenu(true);

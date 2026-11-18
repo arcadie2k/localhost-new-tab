@@ -225,6 +225,14 @@
   for (const ev of Object.keys(bmListeners)) bookmarksApi[ev] = { addListener: (fn) => bmListeners[ev].push(fn) };
 
   window.chrome = {
+    tabs: {
+      async update({ url }) {
+        setTimeout(() => window.toast?.(`In the real extension, this opens ${url}.`), 0);
+      },
+      async create({ url }) {
+        setTimeout(() => window.toast?.(`In the real extension, this opens ${url} in a new tab.`), 0);
+      },
+    },
     bookmarks: bookmarksApi,
     topSites: {
       async get() {

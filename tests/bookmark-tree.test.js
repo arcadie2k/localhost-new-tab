@@ -103,3 +103,16 @@ test('cannot drop into a bookmark or an unknown id', async () => {
   assert.equal(canDrop(tree, 'b1', 'nope'), false);
   assert.equal(canDrop(tree, 'b1', '100'), true);
 });
+
+test('normalizeUrl keeps explicit dotless hosts, IPv6 and bookmarklets', async () => {
+  const { normalizeUrl } = await import('../extension/js/lib/bookmark-tree.js');
+  assert.equal(normalizeUrl('http://nas:5000/'), 'http://nas:5000/');
+  assert.equal(normalizeUrl('http://intranet/'), 'http://intranet/');
+  assert.equal(normalizeUrl('http://[::1]:3000/'), 'http://[::1]:3000/');
+  assert.equal(normalizeUrl('javascript:alert(1 + 2)'), 'javascript:alert(1 + 2)');
+  assert.equal(normalizeUrl('justaword'), null);
+});
+
+test('managed folders are fixed', () => {
+  assert.equal(isFixedNode({ id: '50', parentId: '1', unmodifiable: 'managed' }), true);
+});

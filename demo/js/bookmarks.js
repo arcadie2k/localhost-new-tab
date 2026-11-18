@@ -12,6 +12,7 @@ const view = {
   focusAfter: null,
   editing: null,
   nodes: new Map(),
+  token: 0,
 };
 
 const BAR_ID = '1';
@@ -60,7 +61,29 @@ function rowInner(node, colIndex, index, extra) {
   return `<a class="bm-row" href="${esc(node.url)}" ${attrs} data-tip="${esc(node.url)}">${faviconHTML(node.url, displayTitle(node), 'fav-sm')}<span class="bm-title">${title}</span>${extra}</a>`;
 }
 
+function captureEditor() {
+  const form = document.querySelector('#bookmarks-view .bm-edit');
+  if (!form) return null;
+  const active = form.contains(document.activeElement) ? document.activeElement.name : null;
+  return { key: `${form.dataset.id}|${form.dataset.parent}`, title: form.elements.title.value, url: form.elements.url?.value, active };
+}
+
+function restoreEditor(saved, root) {
+  const form = root.querySelector('.bm-edit');
+  if (!form) return;
+  if (saved && saved.key === `${form.dataset.id}|${form.dataset.parent}`) {
+    form.elements.title.value = saved.title;
+    if (form.elements.url && saved.url !== undefined) form.elements.url.value = saved.url;
+    if (saved.active) form.elements[saved.active]?.focus({ preventScroll: true });
+    return;
+  }
+  const input = form.querySelector('.bm-input');
+  input.focus({ preventScroll: true });
+  input.select();
+}
+
 function renderColumns() {
+  const saved = captureEditor();
   const cols = columnsFor(view.tree, view.path);
   view.path = cols.slice(1).map((c) => c.folder.id);
   $('bm-columns').innerHTML = cols
@@ -77,22 +100,20 @@ function renderColumns() {
     .join(`<span class="bm-crumb-sep" aria-hidden="true">${icon('chevron')}</span>`) || '<span class="bm-crumb is-root">Bookmarks</span>';
   const box = $('bm-columns');
   box.scrollLeft = box.scrollWidth;
-  const input = box.querySelector('.bm-edit .bm-input');
-  if (input) {
-    input.focus({ preventScroll: true });
-    input.select();
-  }
+  restoreEditor(saved, box);
   if (view.focusAfter) {
-    box.querySelector(view.focusAfter)?.focus({ preventScroll: true });
+    $('bookmarks-view').querySelector(view.focusAfter)?.focus({ preventScroll: true });
     view.focusAfter = null;
   }
 }
 
-async function renderResults() {
+async function renderResults(token) {
   let found = [];
   try {
     found = (await api().search(view.query)).filter((n) => n.url);
   } catch {}
+  if (token !== view.token) return;
+  const saved = captureEditor();
   const map = indexTree(view.tree);
   $('bm-results').innerHTML = found
     .map((n, i) => {
@@ -104,22 +125,27 @@ async function renderResults() {
   $('bm-results').hidden = !found.length;
   $('bm-empty').hidden = Boolean(found.length);
   $('bm-empty').textContent = found.length ? '' : `No bookmarks match “${view.query}”.`;
+  restoreEditor(saved, $('bm-results'));
 }
 
 export async function renderBookmarks() {
   if (state.tab !== 'bookmarks' || !featureOn('bookmarks') || !api()) return;
   listen();
   view.query = $('query').value.trim();
+  const token = ++view.token;
+  let tree;
   try {
-    [view.tree] = await api().getTree();
+    [tree] = await api().getTree();
   } catch {
     return;
   }
+  if (token !== view.token) return;
+  view.tree = tree;
   view.nodes = indexTree(view.tree);
   const searching = Boolean(view.query);
   $('bm-columns').hidden = searching;
   $('bm-crumbs').hidden = searching;
-  if (searching) return renderResults();
+  if (searching) return renderResults(token);
   $('bm-results').hidden = true;
   $('bm-empty').hidden = true;
   renderColumns();
@@ -143,13 +169,16 @@ function openFolder(id, col) {
 
 $('bm-columns').addEventListener('click', (e) => {
   const row = e.target.closest('.bm-row.is-folder');
-  if (row) openFolder(row.dataset.id, Number(row.dataset.col));
+  if (!row) return;
+  if (document.activeElement === row) view.focusAfter = `.bm-row[data-id="${CSS.escape(row.dataset.id)}"]`;
+  openFolder(row.dataset.id, Number(row.dataset.col));
 });
 
 $('bm-crumbs').addEventListener('click', (e) => {
   const crumb = e.target.closest('.bm-crumb[data-depth]');
   if (!crumb) return;
   view.path = view.path.slice(0, Number(crumb.dataset.depth));
+  if (document.activeElement === crumb) view.focusAfter = `.bm-crumb[data-depth="${crumb.dataset.depth}"]`;
   renderColumns();
 });
 
@@ -212,9 +241,11 @@ function newBookmark(parentId) {
 
 async function saveEdit(form) {
   const title = form.elements.title.value.trim();
+  const isNew = form.dataset.new === 'true';
   const urlField = form.elements.url;
+  const urlChanged = urlField && (isNew || urlField.value !== urlField.defaultValue);
   let url;
-  if (urlField) {
+  if (urlChanged) {
     url = normalizeUrl(urlField.value);
     if (!url) {
       urlField.setCustomValidity('Enter a valid URL');
@@ -224,11 +255,11 @@ async function saveEdit(form) {
     }
   }
   try {
-    if (form.dataset.new === 'true') {
+    if (isNew) {
       await api().create({ parentId: form.dataset.parent, title: title || (url && new URL(url).hostname) || '', url });
     } else {
       const changes = { title };
-      if (urlField) changes.url = url;
+      if (urlChanged) changes.url = url;
       await api().update(form.dataset.id, changes);
     }
   } catch (e) {
@@ -274,6 +305,7 @@ function confirmDelete(node, trigger) {
     <button class="menu-item" role="menuitem" data-action="cancel">${icon('back')}<span>Cancel</span></button>`,
     { id: node.id, kind: 'bm-confirm', onAction: (action) => (action === 'confirm-delete' ? removeNode(node) : closeMenu()) }
   );
+  $('menu').querySelector('[data-action="cancel"]')?.focus({ preventScroll: true });
 }
 
 function openRowMenu(node, trigger) {
@@ -291,7 +323,7 @@ function openRowMenu(node, trigger) {
       if (action === 'edit' || action === 'rename') {
         closeMenu();
         view.editing = node.id;
-        return renderColumns();
+        return renderBookmarks();
       }
       if (action === 'new-folder-here') return newFolder(node.parentId);
       if (action === 'delete') {
@@ -371,6 +403,7 @@ $('bm-columns').addEventListener('dragstart', (e) => {
   if (!row) return;
   closeMenu(true);
   drag.id = row.dataset.id;
+  row.addEventListener('dragend', endDrag, { once: true });
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/x-bookmark-id', drag.id);
   const node = view.nodes.get(drag.id);
@@ -378,8 +411,10 @@ $('bm-columns').addEventListener('dragstart', (e) => {
   $('bm-columns').classList.add('is-dragging');
 });
 
+const ownDrag = (e) => drag.id && e.dataTransfer?.types.includes('text/x-bookmark-id');
+
 $('bm-columns').addEventListener('dragover', (e) => {
-  if (!drag.id) return;
+  if (!ownDrag(e)) return;
   const t = dropTarget(e);
   clearDropMarks();
   if (!t || !canDrop(view.tree, drag.id, t.parentId)) {
@@ -408,7 +443,7 @@ $('bm-columns').addEventListener('dragleave', (e) => {
 });
 
 $('bm-columns').addEventListener('drop', async (e) => {
-  if (!drag.id) return;
+  if (!ownDrag(e)) return;
   const t = dropTarget(e);
   const id = drag.id;
   endDrag();
@@ -424,3 +459,12 @@ $('bm-columns').addEventListener('drop', async (e) => {
 });
 
 document.addEventListener('dragend', endDrag);
+
+$('bookmarks-view').addEventListener('click', (e) => {
+  const link = e.target.closest('a.bm-row[href]');
+  if (!link || /^https?:/i.test(link.getAttribute('href')) || !chrome.tabs) return;
+  e.preventDefault();
+  const url = link.getAttribute('href');
+  if (e.metaKey || e.ctrlKey || e.button === 1) chrome.tabs.create({ url, active: false });
+  else chrome.tabs.update({ url });
+});
