@@ -92,6 +92,12 @@ function findRoot(start) {
   return null;
 }
 
+function isForeignApp(command, root) {
+  const i = command.indexOf('.app/Contents/');
+  if (i < 0) return false;
+  return !command.slice(0, i).startsWith(root + path.sep);
+}
+
 function rootFromCommand(command) {
   for (const token of command.split(/\s+/)) {
     if (!token.startsWith(HOME + path.sep)) continue;
@@ -201,7 +207,7 @@ async function liveProjects() {
     const command = procs.get(listenPid)?.command || '';
     if (TOOLING.test(command)) continue;
     const root = findRoot(cwdByPid.get(listenPid)) || rootFromCommand(command);
-    if (!root) continue;
+    if (!root || isForeignApp(command, root)) continue;
     if (!live.has(root)) live.set(root, { pids: new Set(), ports: [] });
     const entry = live.get(root);
     entry.pids.add(listenPid);
@@ -599,7 +605,9 @@ function writeNativeMessage(msg) {
   process.stdout.write(Buffer.concat([header, body]), () => process.exit(0));
 }
 
-if (process.argv[2] === '--cli') {
+if (require.main !== module) {
+  module.exports = { isForeignApp };
+} else if (process.argv[2] === '--cli') {
   handle(JSON.parse(process.argv[3] || '{"type":"scan"}')).then((res) => {
     console.log(JSON.stringify(res, null, 2));
   });
