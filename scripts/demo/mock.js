@@ -5,6 +5,8 @@
   if (params.has('shot')) {
     document.documentElement.classList.add('is-shot');
     document.startViewTransition = undefined;
+    window.addEventListener('resize', (e) => e.stopImmediatePropagation());
+    if (params.get('hide') === 'sites') document.documentElement.classList.add('shot-no-sites');
   }
 
   const START_MS = 1600;
@@ -87,17 +89,17 @@
 
   const TOP_SITES = [
     ['https://github.com/', 'GitHub'],
-    ['http://localhost:3000/', 'northwind-web'],
-    ['https://mail.google.com/mail/u/0/', 'Inbox'],
-    ['https://www.figma.com/files', 'Figma'],
-    ['http://127.0.0.1:5173/', 'atlas-dashboard'],
+    ['http://localhost:3000/', 'agent-studio'],
+    ['https://huggingface.co/', 'Hugging Face'],
+    ['https://claude.ai/', 'Claude'],
+    ['http://127.0.0.1:5173/', 'eval-dashboard'],
+    ['https://vercel.com/dashboard', 'Vercel'],
     ['https://linear.app/', 'Linear'],
-    ['https://www.youtube.com/', 'YouTube'],
-    ['https://vercel.com/dashboard', 'Vercel Dashboard'],
+    ['https://www.figma.com/files', 'Figma'],
+    ['https://hub.docker.com/', 'Docker Hub'],
+    ['https://arxiv.org/list/cs.CL/recent', 'arXiv: Computation and Language'],
+    ['https://stackoverflow.com/', 'Stack Overflow'],
     ['https://news.ycombinator.com/', 'Hacker News'],
-    ['https://developer.chrome.com/docs/extensions/reference/api', 'Chrome Extensions API reference'],
-    ['https://www.notion.so/', ''],
-    ['https://chatgpt.com/', 'ChatGPT'],
   ].map(([url, title]) => ({ url, title }));
 
   let nextId = 1000;
@@ -105,24 +107,24 @@
   const folder = (title, children) => ({ title, children });
   const seed = folder('', [
     folder('Bookmarks bar', [
-      folder('Work', [
+      folder('AI stack', [
         folder('Docs', [
-          bm('MDN Web Docs', 'https://developer.mozilla.org/'),
-          bm('Chrome extensions reference', 'https://developer.chrome.com/docs/extensions/reference/api'),
-          bm('React Native docs', 'https://reactnative.dev/docs/getting-started'),
+          bm('Claude API docs', 'https://docs.anthropic.com/'),
+          bm('Hugging Face Hub', 'https://huggingface.co/docs/hub'),
+          bm('FastAPI', 'https://fastapi.tiangolo.com/'),
           folder('Design', [bm('Refactoring UI', 'https://www.refactoringui.com/'), bm('Laws of UX', 'https://lawsofux.com/')]),
         ]),
         bm('Linear', 'https://linear.app/'),
         bm('Vercel', 'https://vercel.com/dashboard'),
-        bm('Figma: Wellastore', 'https://www.figma.com/files'),
+        bm('Figma: Relay', 'https://www.figma.com/files'),
         bm('Sentry', 'https://sentry.io/'),
       ]),
-      folder("Master's", [
-        bm('Course portal', 'https://example.edu/portal'),
-        bm('arXiv: retrieval practice', 'https://arxiv.org/'),
-        folder('Thesis', [bm('Overleaf', 'https://www.overleaf.com/'), bm('Zotero', 'https://www.zotero.org/')]),
+      folder('Research', [
+        bm('arXiv: cs.CL', 'https://arxiv.org/list/cs.CL/recent'),
+        bm('Papers with Code', 'https://paperswithcode.com/'),
+        folder('Reading list', [bm('Overleaf', 'https://www.overleaf.com/'), bm('Zotero', 'https://www.zotero.org/')]),
       ]),
-      folder('Gym', [bm('Strong app', 'https://www.strong.app/'), bm('Knee rehab routine', 'https://example.com/knee'), bm('', 'https://www.strava.com/dashboard')]),
+      folder('Side projects', [bm('Product Hunt', 'https://www.producthunt.com/'), bm('Indie Hackers', 'https://www.indiehackers.com/'), bm('', 'https://www.strava.com/dashboard')]),
       bm('GitHub', 'https://github.com/'),
       bm('Gmail', 'https://mail.google.com/'),
       bm('Dark mode toggle', 'javascript:document.body.classList.toggle("dark")'),
@@ -302,4 +304,44 @@
       onChanged: { addListener: (fn) => listeners.push(fn) },
     },
   };
+
+  const realFavicon = (img) => {
+    const src = img.getAttribute('src') || '';
+    const i = src.indexOf('pageUrl=');
+    if (i < 0) return;
+    try {
+      const host = new URL(decodeURIComponent(src.slice(i + 8).split('&')[0])).hostname;
+      img.src = `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
+    } catch {}
+  };
+  new MutationObserver((records) => {
+    for (const r of records) for (const n of r.addedNodes) if (n.nodeType === 1) n.querySelectorAll?.('.fav img').forEach(realFavicon);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const tap = (el) => el?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  window.addEventListener('load', async () => {
+    if (![...params.keys()].some((k) => ['tab', 'expand', 'menu', 'settings'].includes(k))) return;
+    await wait(900);
+    if (params.has('expand')) tap(document.querySelector('.site-more'));
+    if (params.get('tab') === 'bookmarks') {
+      tap(document.querySelector('.tab-btn[data-tab="bookmarks"]'));
+      await wait(300);
+      for (const name of (params.get('open') || '').split('/').filter(Boolean)) {
+        const cols = document.querySelectorAll('.bm-col');
+        const row = [...cols[cols.length - 1].querySelectorAll('.bm-row.is-folder')].find((r) => r.textContent.trim() === name);
+        tap(row);
+        await wait(150);
+      }
+    }
+    await wait(800);
+    const menu = params.get('menu');
+    if (menu) {
+      const [id, action] = menu.split(':');
+      tap(document.querySelector(`.card[data-id="${id}"] [data-action="${action}"]`));
+    }
+    if (params.has('settings')) tap(document.getElementById('settings-btn'));
+    await wait(50);
+    if (params.has('shot')) document.activeElement?.blur();
+  });
 })();

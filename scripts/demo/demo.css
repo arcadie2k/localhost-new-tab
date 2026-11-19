@@ -32,3 +32,7 @@
   animation: none !important;
   transition: none !important;
 }
+
+.shot-no-sites #most-visited {
+  display: none !important;
+}
