@@ -110,7 +110,7 @@ Replaces the new tab page with a developer dashboard: the local development serv
 
 | Permission | Justification |
 |---|---|
-| `nativeMessaging` | Talks to the companion helper on the user's own machine, which lists listening localhost ports, maps them to project folders and starts or stops dev servers on request. The browser cannot read local processes any other way. The helper's source ships inside the extension package (`helper/host.js`); when the installed helper is older, the extension hands it that bundled file, checksum verified, so the helper always matches the reviewed version. No code is downloaded at runtime. |
+| `nativeMessaging` | Talks to the companion helper on the user's own machine, which lists listening localhost ports, maps them to project folders and starts or stops dev servers on request. The browser cannot read local processes any other way. The helper's source ships inside the extension package (`helper/host.js`); when the installed helper is an older version, the extension hands it that bundled file, checksum verified and test-started before it replaces the old one, so the helper always matches the reviewed version. No code is downloaded at runtime. |
 | `alarms` | Runs a lightweight port check once a minute so dev servers that run briefly are still recorded in the project history. |
 | `storage` | Stores page preview thumbnails and favicons of the user's localhost projects locally so the new tab shows them instantly. |
 | `unlimitedStorage` | Thumbnails are images. Without this, a user with many projects would hit the default local storage quota and lose previews. Data never leaves the device. |

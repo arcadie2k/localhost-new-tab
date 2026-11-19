@@ -27,9 +27,11 @@ test('helperInfo reports the version and the hash of the file on disk', () => {
   assert.deepEqual(helperInfo(helperPath), { version: HELPER_VERSION, hash: sha(fs.readFileSync(helperPath)) });
 });
 
+const realSource = fs.readFileSync(helperPath, 'utf8');
+
 test('installHelper replaces the file and keeps the previous one', () => {
   const file = sandbox();
-  const source = "#!/usr/bin/env node\n'use strict';\nconsole.log('new');\n";
+  const source = realSource + '\n// next release\n';
   const res = installHelper({ source, hash: sha(source) }, file);
   assert.equal(fs.readFileSync(file, 'utf8'), source);
   assert.equal(fs.readFileSync(file.replace(/\.js$/, '.prev.js'), 'utf8'), 'old helper');
@@ -52,4 +54,20 @@ test('installHelper refuses code that does not parse', () => {
 test('install.sh downloads the helper from the same release', () => {
   const script = fs.readFileSync(new URL('../install.sh', import.meta.url), 'utf8');
   assert.equal(script.match(/^VERSION="([^"]+)"/m)[1], manifest.version);
+});
+
+test('installHelper refuses code that parses but crashes on start', () => {
+  const file = sandbox();
+  const source = "throw new Error('boom');\n";
+  assert.throws(() => installHelper({ source, hash: sha(source) }, file), /start/i);
+  assert.equal(fs.readFileSync(file, 'utf8'), 'old helper');
+});
+
+test('installing the same build twice keeps the real previous version', () => {
+  const file = sandbox();
+  const source = realSource + '\n// next release\n';
+  installHelper({ source, hash: sha(source) }, file);
+  installHelper({ source, hash: sha(source) }, file);
+  assert.equal(fs.readFileSync(file.replace(/\.js$/, '.prev.js'), 'utf8'), 'old helper');
+  assert.deepEqual(fs.readdirSync(path.dirname(file)).filter((f) => f.endsWith('.tmp')), []);
 });

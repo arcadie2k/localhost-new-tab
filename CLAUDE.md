@@ -13,7 +13,7 @@ Chrome MV3 extension (vanilla ES modules, no build step) in `extension/`, native
 
 ## Helper updates
 
-The helper ships inside the extension (`extension/helper/host.js`) and updates itself: every scan reports its version and SHA-256, and when the hash differs from the bundled file the extension sends the bundled source with an `update` message (checksum and syntax checked, atomic replace, previous copy kept as `host.prev.js`). Bump `HELPER_VERSION` in host.js, `VERSION` in install.sh and the manifest version together; a test fails if they drift, and `scripts/package.sh` refuses to build when tests fail.
+The helper ships inside the extension (`extension/helper/host.js`) and updates itself: every scan reports its version and SHA-256, and when the bundled version is newer the extension sends the bundled source with an `update` message. The helper checks the checksum, starts the new file once (`--cli version`) before swapping it in atomically, keeps the previous copy as `host.prev.js`, and only updates the copy in `~/.localhost-new-tab/bin` (never a symlink or the repo). Same version with a different hash is treated as a local build and left alone, so a store build and an unpacked build never fight. Bump `HELPER_VERSION` in host.js, `VERSION` in install.sh and the manifest version together; a test fails if they drift, and `scripts/package.sh` refuses to build when tests fail.
 
 ## Images
 

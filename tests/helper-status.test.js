@@ -6,8 +6,8 @@ test('same hash as the bundled helper is current', () => {
   assert.equal(helperStatus({ version: '1.1.1', hash: 'abc' }, 'abc'), 'current');
 });
 
-test('a different hash is outdated and gets updated', () => {
-  assert.equal(helperStatus({ version: '1.1.0', hash: 'old' }, 'abc'), 'outdated');
+test('an older version is outdated and gets updated', () => {
+  assert.equal(helperStatus({ version: '1.1.0', hash: 'old' }, 'abc', '1.1.1'), 'outdated');
 });
 
 test('a helper that reports nothing predates self-update', () => {
@@ -24,5 +24,6 @@ test('a newer helper is never downgraded by an older extension', () => {
   assert.equal(helperStatus({ version: '1.2.0', hash: 'new' }, 'abc', '1.1.1'), 'newer');
   assert.equal(helperStatus({ version: '1.10.0', hash: 'new' }, 'abc', '1.9.0'), 'newer');
   assert.equal(helperStatus({ version: '1.1.0', hash: 'old' }, 'abc', '1.1.1'), 'outdated');
-  assert.equal(helperStatus({ version: '1.1.1', hash: 'dev' }, 'abc', '1.1.1'), 'outdated');
+  assert.equal(helperStatus({ version: '1.1.1', hash: 'dev' }, 'abc', '1.1.1'), 'modified');
+  assert.equal(helperStatus({ version: '1.2.0-dev', hash: 'dev' }, 'abc', '1.1.1'), 'modified');
 });

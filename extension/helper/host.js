@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
-const vm = require('vm');
+const { execFileSync } = require('child_process');
 
 const HELPER_VERSION = '1.1.1';
 
@@ -95,10 +95,13 @@ function findRoot(start) {
   return null;
 }
 
+const APP_DIRS = ['/Applications/', '/System/Applications/', path.join(HOME, 'Applications') + path.sep, path.join(HOME, 'Library', 'Application Support') + path.sep];
+
 function isForeignApp(command, root) {
-  const i = command.indexOf('.app/Contents/');
-  if (i < 0) return false;
-  return !command.slice(0, i).startsWith(root + path.sep);
+  const exe = command.split(/\.app\/Contents\/MacOS\//)[0];
+  if (exe === command || exe.includes('.framework/') || /\s-/.test(exe)) return false;
+  if (exe.startsWith(root + path.sep)) return false;
+  return APP_DIRS.some((dir) => exe.startsWith(dir));
 }
 
 function rootFromCommand(command) {
@@ -576,7 +579,20 @@ async function icon({ port }) {
   return { icon: await fetchIcon(`http://localhost:${port}`) };
 }
 
-const HANDLERS = { scan, start, stop, open, setCommand, forget, dismiss, thumb, icon, appIcons, diag, update: (msg) => installHelper(msg) };
+const HANDLERS = { scan, start, stop, open, setCommand, forget, dismiss, thumb, icon, appIcons, diag, version: () => helperInfo(), update };
+
+function update(msg) {
+  const bin = path.join(DATA_DIR, 'bin');
+  const linked = (() => {
+    try {
+      return fs.lstatSync(process.argv[1]).isSymbolicLink();
+    } catch {
+      return true;
+    }
+  })();
+  if (path.dirname(__filename) !== bin || linked) throw new Error('Not the installed helper, update skipped');
+  return installHelper(msg);
+}
 
 function sha256(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
@@ -590,11 +606,21 @@ function installHelper({ source, hash }, target = __filename) {
   if (typeof source !== 'string' || !source) throw new Error('Empty helper');
   const data = Buffer.from(source, 'utf8');
   if (sha256(data) !== hash) throw new Error('Helper checksum mismatch, nothing was installed');
-  new vm.Script(source.replace(/^#!.*/, ''), { filename: 'host.js' });
+  if (fs.existsSync(target) && sha256(fs.readFileSync(target)) === hash) return { ok: true, ...helperInfo(target) };
   const tmp = `${target}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, data, { mode: 0o755 });
-  if (fs.existsSync(target)) fs.copyFileSync(target, target.replace(/\.js$/, '.prev.js'));
-  fs.renameSync(tmp, target);
+  try {
+    fs.writeFileSync(tmp, data, { mode: 0o755 });
+    try {
+      const out = JSON.parse(execFileSync(process.execPath, [tmp, '--cli', '{"type":"version"}'], { encoding: 'utf8', timeout: 10000, stdio: ['ignore', 'pipe', 'ignore'] }));
+      if (!out.version) throw new Error('no version');
+    } catch {
+      throw new Error('New helper failed to start, nothing was installed');
+    }
+    if (fs.existsSync(target)) fs.copyFileSync(target, target.replace(/\.js$/, '.prev.js'));
+    fs.renameSync(tmp, target);
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
   return { ok: true, ...helperInfo(target) };
 }
 

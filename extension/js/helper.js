@@ -3,11 +3,15 @@ import { helperStatus } from './lib/helper-status.js';
 
 let bundled = null;
 let attempted = false;
+let failed = false;
+let inflight = null;
 let hostFn = null;
 
 const LABELS = {
   current: (v) => `Helper v${v} · up to date`,
   newer: (v) => `Helper v${v} · newer than this extension`,
+  modified: (v) => `Helper v${v} · local build`,
+  failed: () => 'Helper update failed',
   outdated: (v) => `Helper v${v} · update failed`,
   legacy: () => 'Helper needs a one-time update',
   unknown: () => '',
@@ -19,7 +23,7 @@ async function loadBundled() {
     const buf = await (await fetch(chrome.runtime.getURL('helper/host.js'))).arrayBuffer();
     if (!buf.byteLength) throw new Error('No bundled helper');
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', buf));
-    bundled = { hash: [...digest].map((b) => b.toString(16).padStart(2, '0')).join(''), source: new TextDecoder().decode(buf) };
+    bundled = { hash: [...digest].map((b) => b.toString(16).padStart(2, '0')).join(''), source: new TextDecoder('utf-8', { ignoreBOM: true, fatal: true }).decode(buf) };
   } catch {
     bundled = false;
   }
@@ -31,8 +35,13 @@ export function setupCommand() {
   return `curl -fsSL https://raw.githubusercontent.com/arcadie2k/localhost-new-tab/v${version}/install.sh | sh -s -- ${chrome.runtime.id}`;
 }
 
-export async function syncHelper(info, host) {
+export function syncHelper(info, host) {
   hostFn = host;
+  if (!inflight) inflight = applyHelper(info, host).finally(() => (inflight = null));
+  return inflight;
+}
+
+async function applyHelper(info, host) {
   const own = await loadBundled();
   const version = chrome.runtime.getManifest?.().version;
   let status = helperStatus(info, own && own.hash, version);
@@ -47,11 +56,14 @@ export async function syncHelper(info, host) {
     } catch (e) {
       console.warn('Helper update failed:', e.message);
     }
+    failed = status === 'outdated';
   }
+  if (status === 'outdated' && failed) status = 'failed';
   state.helper = { ...(current || {}), status };
   $('helper-status').textContent = LABELS[status](state.helper.version);
-  $('helper-notice').hidden = status !== 'legacy';
-  if (status === 'legacy') $('helper-command').textContent = setupCommand();
+  const needsCommand = status === 'legacy' || status === 'failed';
+  $('helper-notice').hidden = !needsCommand;
+  if (needsCommand) $('helper-command').textContent = setupCommand();
 }
 
 $('helper-copy').addEventListener('click', async () => {
