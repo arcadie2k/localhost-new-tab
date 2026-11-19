@@ -42,7 +42,7 @@
   const handlers = {
     scan() {
       tick();
-      return { projects: clone(projects), apps: window.DEMO.apps };
+      return { projects: clone(projects), apps: (window.SHOT && window.SHOT.apps) || window.DEMO.apps };
     },
     start({ id }) {
       const p = find(id);
@@ -73,7 +73,7 @@
       return { ok: true };
     },
     dismiss: () => ({ ok: true }),
-    appIcons: () => ({ icons: {} }),
+    appIcons: () => ({ icons: (window.SHOT && window.SHOT.icons) || {} }),
     thumb: () => ({ error: 'Previews are pre-rendered in the demo' }),
   };
 
@@ -321,8 +321,12 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const tap = (el) => el?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   window.addEventListener('load', async () => {
-    if (![...params.keys()].some((k) => ['tab', 'expand', 'menu', 'settings'].includes(k))) return;
+    if (![...params.keys()].some((k) => ['tab', 'expand', 'menu', 'settings', 'view'].includes(k))) return;
     await wait(900);
+    if (params.get('view') === 'list') {
+      tap(document.querySelector('.view-btn[data-view="list"]'));
+      await wait(200);
+    }
     if (params.has('expand')) tap(document.querySelector('.site-more'));
     if (params.get('tab') === 'bookmarks') {
       tap(document.querySelector('.tab-btn[data-tab="bookmarks"]'));
@@ -332,6 +336,12 @@
         const row = [...cols[cols.length - 1].querySelectorAll('.bm-row.is-folder')].find((r) => r.textContent.trim() === name);
         tap(row);
         await wait(150);
+      }
+      if (params.get('scroll') === 'start') {
+        await wait(400);
+        const box = document.getElementById('bm-columns');
+        box.style.scrollBehavior = 'auto';
+        box.scrollLeft = 0;
       }
     }
     await wait(800);

@@ -148,6 +148,7 @@ media['icon:voice-companion'] = { url: favicon('V', '#a77bff', '#1a0f3d'), at: n
 const css = fs.readFileSync(path.join(ext, 'newtab.css'), 'utf8');
 const html = fs.readFileSync(path.join(ext, 'newtab.html'), 'utf8');
 const DEMO_ONLY = process.argv.includes('--demo-only');
+const UPDATE_ONLY = process.argv.includes('--update');
 const MODULE_TAG = '<script type="module" src="js/main.js"></script>';
 const copyModules = (dir) => fs.cpSync(path.join(ext, 'js'), path.join(dir, 'js'), { recursive: true });
 
@@ -185,6 +186,23 @@ if (DEMO_ONLY) {
 }
 
 const VERSION = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
+const TERMINAL_APPS = new Set(['Terminal', 'iTerm', 'Warp', 'Ghostty', 'Alacritty', 'kitty', 'WezTerm', 'Hyper']);
+let localIcons = {};
+try {
+  localIcons = JSON.parse(execFileSync(process.execPath, [path.join(root, 'host', 'host.js'), '--cli', '{"type":"appIcons"}'], { encoding: 'utf8' })).icons || {};
+} catch {}
+const bundledIcons = path.join(__dirname, 'demo', 'app-icons');
+for (const f of fs.existsSync(bundledIcons) ? fs.readdirSync(bundledIcons) : []) {
+  if (!f.endsWith('.png')) continue;
+  const name = f.slice(0, -4);
+  if (!localIcons[name]) localIcons = { [name]: `data:image/png;base64,${fs.readFileSync(path.join(bundledIcons, f)).toString('base64')}`, ...localIcons };
+}
+const localNames = Object.keys(localIcons);
+const shotFile = path.join(tmp, 'shot.json');
+fs.writeFileSync(shotFile, JSON.stringify(localNames.length ? {
+  icons: localIcons,
+  apps: { editors: localNames.filter((n) => !TERMINAL_APPS.has(n)), terminals: localNames.filter((n) => TERMINAL_APPS.has(n)) },
+} : {}));
 const port = Number(process.env.SHOT_PORT || 4199);
 const server = spawn(process.execPath, ['-e', `
   const http = require('http'), fs = require('fs'), path = require('path');
@@ -193,6 +211,7 @@ const server = spawn(process.execPath, ['-e', `
     const file = path.join(${JSON.stringify(demoDir)}, decodeURIComponent(req.url.split('?')[0]).replace(/\\/$/, '/index.html'));
     fs.readFile(file, (err, data) => {
       if (err) { res.writeHead(404); return res.end(); }
+      if (file.endsWith('index.html')) data = String(data).replace('<script src="mock.js">', '<script>window.SHOT = ' + fs.readFileSync(${JSON.stringify(shotFile)}, 'utf8') + '</script><script src="mock.js">');
       res.writeHead(200, { 'content-type': types[path.extname(file)] || 'application/octet-stream' });
       res.end(data);
     });
@@ -203,12 +222,51 @@ const demoAt = (query) => `http://127.0.0.1:${port}/?shot&granted&${query}`;
 const dataUrl = (file) => `data:image/png;base64,${fs.readFileSync(file).toString('base64')}`;
 const markSvg = fs.readFileSync(path.join(root, 'assets', 'icons', 'icon512.svg'), 'utf8');
 
+/* Release update image, 1080x1350, from scripts/updates.js */
+
+const update = require('./updates').find((u) => u.version === VERSION);
+if (update) {
+  console.log(`rendering update image for v${VERSION}…`);
+  const CONTENT_W = 904;
+  const ROW_HEIGHT = 431;
+  const shotPart = (name, { scene, viewport: [w, h] }) => {
+    const file = path.join(tmp, `update-${name}.png`);
+    shoot(demoAt(scene), file, w, h, 2);
+    return { file, w };
+  };
+  const crop = ({ file, w }, [x, y, cw, ch], zoom) =>
+    `<div class="shot" style="width:${Math.round(cw * zoom)}px;height:${Math.round(ch * zoom)}px;background-image:url(${dataUrl(file)});background-size:${w * zoom}px auto;background-position:${-x * zoom}px ${-y * zoom}px"></div>`;
+  const hero = crop(shotPart('hero', update.hero), update.hero.crop, CONTENT_W / update.hero.crop[2]);
+  const row = update.row.map((item, i) => crop(shotPart(`row${i}`, item), item.crop, ROW_HEIGHT / item.crop[3])).join('');
+  const updatesDir = path.join(root, 'assets', 'social', 'updates');
+  fs.mkdirSync(updatesDir, { recursive: true });
+  shoot(page('update', `
+    <header><div class="brand">${markSvg}<b>Localhost New Tab</b></div><span class="ver">v${VERSION}</span></header>
+    <h1>${update.title}</h1>
+    <div class="grid">${hero}<div class="row">${row}</div></div>`, `${FONTS}
+    body{width:1080px;height:1350px;background:radial-gradient(900px 600px at 85% 0%,#e6ddff,transparent 70%),#f1eee9;color:#111;padding:72px 88px;overflow:hidden}
+    header{display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:18px}.brand svg{width:56px;height:56px;display:block}
+    .brand b{font-size:30px;font-weight:500;letter-spacing:-.6px}
+    .ver{font:500 22px/1 Mono,monospace;letter-spacing:.5px;background:#111;color:#fff;padding:12px 18px;border-radius:999px}
+    h1{font-size:50px;line-height:1.1;letter-spacing:-1.5px;font-weight:300;margin:52px 0 48px;white-space:nowrap}
+    h1 em{font-style:italic;font-weight:600;letter-spacing:-1.2px}
+    .grid{display:flex;flex-direction:column;gap:20px}.row{display:flex;gap:20px}
+    .shot{border-radius:14px;background-color:#000;background-repeat:no-repeat;box-shadow:0 24px 48px rgba(30,20,60,.16),0 0 0 1px rgba(0,0,0,.06)}`),
+    path.join(updatesDir, `update-v${VERSION}-1080x1350.png`), 1080, 1350);
+}
+if (UPDATE_ONLY) {
+  server.kill();
+  fs.rmSync(tmp, { recursive: true, force: true });
+  process.exit(0);
+}
+
 console.log('rendering screenshots…');
+for (const f of fs.readdirSync(out)) if (f.startsWith('screenshot-')) fs.rmSync(path.join(out, f));
 shoot(demoAt('theme=dark'), path.join(out, 'screenshot-1-overview-dark.png'), 1280, 800);
 shoot(demoAt('theme=dark&tab=bookmarks&open=AI stack/Docs'), path.join(out, 'screenshot-2-bookmarks-dark.png'), 1280, 800);
-shoot(demoAt('theme=light'), path.join(out, 'screenshot-3-overview-light.png'), 1280, 800);
-shoot(demoAt('theme=light&menu=eval-dashboard:ports'), path.join(out, 'screenshot-4-ports-light.png'), 1280, 800);
-for (const old of ['screenshot-1-overview-light.png', 'screenshot-2-overview-dark.png', 'screenshot-3-actions-light.png']) fs.rmSync(path.join(out, old), { force: true });
+shoot(demoAt('theme=light&view=list'), path.join(out, 'screenshot-3-list-light.png'), 1280, 800);
+shoot(demoAt('theme=light&menu=agent-studio:editor'), path.join(out, 'screenshot-4-editor-light.png'), 1280, 800);
+shoot(demoAt('theme=dark&view=list&menu=eval-dashboard:ports'), path.join(out, 'screenshot-5-ports-dark.png'), 1280, 800);
 
 /* README hero + social images */
 
@@ -231,40 +289,6 @@ const landscape = (name, w, h) => shoot(page(name, `
   img{width:1100px;margin:64px 0 0 40px;border:1px solid #dedbd6;border-radius:8px;align-self:flex-start}`), path.join(social, `${name}.png`), w, h);
 landscape('github-social-1280x640', 1280, 640);
 landscape('og-1200x630', 1200, 630);
-
-/* LinkedIn update collage, 1080x1350 */
-
-console.log('rendering LinkedIn collage…');
-const parts = path.join(tmp, 'parts');
-fs.mkdirSync(parts, { recursive: true });
-const part = (name, query, w, h) => {
-  const file = path.join(parts, `${name}.png`);
-  shoot(demoAt(query), file, w, h, 2);
-  return { file, w };
-};
-const overview = part('overview', 'theme=dark&expand', 1280, 820);
-const bookmarks = part('bookmarks', 'theme=dark&tab=bookmarks&open=AI stack&hide=sites', 700, 560);
-const settings = part('settings', 'theme=dark&settings', 904, 640);
-const crop = ({ file, w }, cw, ch, x, y, zoom = 1) =>
-  `<div class="shot" style="width:${cw}px;height:${ch}px;background-image:url(${dataUrl(file)});background-size:${w * zoom}px auto;background-position:${-x * zoom}px ${-y * zoom}px"></div>`;
-const postDir = path.join(root, 'linkedin-post');
-fs.mkdirSync(postDir, { recursive: true });
-shoot(page('linkedin-update', `
-  <header><div class="brand">${markSvg}<b>Localhost New Tab</b></div><span class="ver">v${VERSION}</span></header>
-  <h1>Now with <em>Bookmarks</em> and <em>Most Visited</em></h1>
-  <div class="grid">
-    ${crop(overview, 904, 540, 0, 20, 904 / 1280)}
-    <div class="row">${crop(bookmarks, 584, 431, 0, 20, 584 / 700)}${crop(settings, 300, 431, 572, 111)}</div>
-  </div>`, `${FONTS}
-  body{width:1080px;height:1350px;background:radial-gradient(900px 600px at 85% 0%,#e6ddff,transparent 70%),#f1eee9;color:#111;padding:72px 88px;overflow:hidden}
-  header{display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:18px}.brand svg{width:56px;height:56px;display:block}
-  .brand b{font-size:30px;font-weight:500;letter-spacing:-.6px}
-  .ver{font:500 22px/1 Mono,monospace;letter-spacing:.5px;background:#111;color:#fff;padding:12px 18px;border-radius:999px}
-  h1{font-size:50px;line-height:1.1;letter-spacing:-1.5px;font-weight:300;margin:52px 0 48px;white-space:nowrap}
-  h1 em{font-style:italic;font-weight:600;letter-spacing:-1.2px}
-  .grid{display:flex;flex-direction:column;gap:20px}.row{display:flex;gap:20px}
-  .shot{border-radius:14px;background-color:#000;background-repeat:no-repeat;box-shadow:0 24px 48px rgba(30,20,60,.16),0 0 0 1px rgba(0,0,0,.06)}`),
-  path.join(postDir, `update-v${VERSION}-1080x1350.png`), 1080, 1350);
 
 /* Promo tiles */
 

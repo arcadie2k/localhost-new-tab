@@ -83,8 +83,9 @@ Totul rămâne pe calculatorul tău. Fără server, fără analytics, fără con
 | Store icon | `store-icon-128.png` | 128×128, 96px artwork + 16px transparent padding |
 | Screenshot 1 | `screenshot-1-overview-dark.png` | 1280×800 |
 | Screenshot 2 | `screenshot-2-bookmarks-dark.png` | 1280×800 |
-| Screenshot 3 | `screenshot-3-overview-light.png` | 1280×800 |
-| Screenshot 4 | `screenshot-4-ports-light.png` | 1280×800 |
+| Screenshot 3 | `screenshot-3-list-light.png` | 1280×800 |
+| Screenshot 4 | `screenshot-4-editor-light.png` | 1280×800 |
+| Screenshot 5 | `screenshot-5-ports-dark.png` | 1280×800 |
 | Small promo tile | `promo-small-440x280.png` | 440×280 |
 | Marquee promo tile | `promo-marquee-1400x560.png` | 1400×560 |
 
