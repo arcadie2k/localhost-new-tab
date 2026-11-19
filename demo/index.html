@@ -51,6 +51,11 @@
 
     <div class="board">
       <div class="board-inner">
+      <section class="notice" id="helper-notice" hidden>
+        <div class="notice-text"><b>Update the helper once.</b> After this, helper updates install themselves with the extension.</div>
+        <code class="notice-command" id="helper-command"></code>
+        <button class="chip-btn" id="helper-copy">Copy command</button>
+      </section>
 
     <section class="section" id="section-pinned" hidden>
       <h2 class="section-label"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>Pinned <span class="section-count" id="count-pinned"></span></h2>
@@ -115,6 +120,7 @@
       <label class="switch-row"><span>Services</span><input type="checkbox" role="switch" data-section="services"></label>
       <label class="switch-row"><span>Recent</span><input type="checkbox" role="switch" data-section="recent"></label>
     </div>
+    <div class="settings-foot"><span id="helper-status"></span><button class="settings-foot-btn" id="copy-diag">Copy diagnostics</button></div>
   </div>
   <div class="menu" id="menu" role="menu" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

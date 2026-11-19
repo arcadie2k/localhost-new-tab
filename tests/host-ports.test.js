@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { isForeignApp } = require('../host/host.js');
+const { isForeignApp } = require('../extension/helper/host.js');
 
 const ROOT = '/Users/me/code/law-case-tracker-app';
 

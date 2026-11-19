@@ -99,12 +99,12 @@ flowchart LR
 - **Stop:** SIGTERM to the listening process and its runner parents (`npm`, `pnpm`, `node`, ...), never past your shell; SIGKILL after 4 seconds.
 - **Previews:** captured with headless Chrome against `localhost` only.
 
-`install.sh` copies the helper to `~/.localhost-new-tab/bin` because macOS privacy rules stop Chrome from launching scripts inside `~/Desktop` or `~/Documents`. If you edit `host/host.js`, run it again.
+`install.sh` copies the helper to `~/.localhost-new-tab/bin` because macOS privacy rules stop Chrome from launching scripts inside `~/Desktop` or `~/Documents`. If you edit `extension/helper/host.js`, run it again.
 
 Debug the helper directly:
 
 ```bash
-node host/host.js --cli '{"type":"scan"}'
+node extension/helper/host.js --cli '{"type":"scan"}'
 ```
 
 ## Privacy
@@ -117,9 +117,9 @@ Fork it, or just lift the parts you like. Some pieces that might be useful elsew
 
 | Idea | Where |
 | --- | --- |
-| Native messaging host with a CLI mode for debugging | [host/host.js](host/host.js) |
+| Native messaging host with a CLI mode for debugging | [extension/helper/host.js](extension/helper/host.js) |
 | Getting around macOS TCC when a native host lives in `~/Desktop` | [install.sh](install.sh) |
-| Classifying ports as web app, HTTP service or raw TCP with a 1.2s probe | `probe` in [host/host.js](host/host.js) |
+| Classifying ports as web app, HTTP service or raw TCP with a 1.2s probe | `probe` in [extension/helper/host.js](extension/helper/host.js) |
 | Cards that travel between sections with the View Transitions API | `render` in [extension/newtab.js](extension/newtab.js) |
 | A warm editorial theme as plain CSS tokens, light and dark | top of [extension/newtab.css](extension/newtab.css) |
 | An app icon drawn entirely in code (SVG, squircle math, glass tiles) | [scripts/icons.js](scripts/icons.js) |
@@ -130,7 +130,7 @@ Fork it, or just lift the parts you like. Some pieces that might be useful elsew
 
 ```
 extension/        the Chrome extension (Manifest V3, no build step)
-host/host.js      native messaging helper (Node, no dependencies)
+extension/helper/host.js      native messaging helper (Node, no dependencies)
 install.sh        registers the helper for Chrome, Brave, Arc, Chromium
 scripts/          icon, store asset, demo and packaging scripts
 demo/             generated static demo (served by GitHub Pages)

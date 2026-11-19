@@ -2,7 +2,7 @@
 set -eu
 
 HOST_NAME="com.arcadie.localhost_newtab"
-VERSION="1.0.0"
+VERSION="1.1.1"
 REPO="arcadie2k/localhost-new-tab"
 BASE_URL="${LNT_BASE_URL:-https://raw.githubusercontent.com/$REPO/v$VERSION}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -42,13 +42,13 @@ if [ "$("$NODE" -p 'process.versions.node.split(".")[0]')" -lt 18 ]; then
   exit 1
 fi
 
-if [ -f "$DIR/host/host.js" ]; then
-  SOURCE="$DIR/host/host.js"
+if [ -f "$DIR/extension/helper/host.js" ]; then
+  SOURCE="$DIR/extension/helper/host.js"
 else
   TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
   echo "Downloading helper v$VERSION..."
-  curl -fsSL "$BASE_URL/host/host.js" -o "$TMP/host.js" || { echo "Download failed: $BASE_URL/host/host.js" >&2; exit 1; }
+  curl -fsSL "$BASE_URL/extension/helper/host.js" -o "$TMP/host.js" || { echo "Download failed: $BASE_URL/extension/helper/host.js" >&2; exit 1; }
   [ -s "$TMP/host.js" ] && "$NODE" --check "$TMP/host.js" 2>/dev/null || { echo "Downloaded helper is invalid, nothing was installed." >&2; exit 1; }
   SOURCE="$TMP/host.js"
 fi

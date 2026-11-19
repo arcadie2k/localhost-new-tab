@@ -1,6 +1,6 @@
 # Localhost New Tab
 
-Chrome MV3 extension (vanilla ES modules, no build step) in `extension/`, native helper in `host/host.js`.
+Chrome MV3 extension (vanilla ES modules, no build step) in `extension/`, native helper in `extension/helper/host.js`.
 
 ## Commands
 
@@ -10,6 +10,10 @@ Chrome MV3 extension (vanilla ES modules, no build step) in `extension/`, native
 - Release update image only: `node scripts/store-assets.js --update`
 - Store zip: `sh scripts/package.sh`
 - A release needs the `vX.Y.Z` git tag pushed: the setup command in the extension downloads `install.sh` from that tag.
+
+## Helper updates
+
+The helper ships inside the extension (`extension/helper/host.js`) and updates itself: every scan reports its version and SHA-256, and when the hash differs from the bundled file the extension sends the bundled source with an `update` message (checksum and syntax checked, atomic replace, previous copy kept as `host.prev.js`). Bump `HELPER_VERSION` in host.js, `VERSION` in install.sh and the manifest version together; a test fails if they drift, and `scripts/package.sh` refuses to build when tests fail.
 
 ## Images
 

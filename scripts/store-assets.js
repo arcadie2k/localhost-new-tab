@@ -189,7 +189,7 @@ const VERSION = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf
 const TERMINAL_APPS = new Set(['Terminal', 'iTerm', 'Warp', 'Ghostty', 'Alacritty', 'kitty', 'WezTerm', 'Hyper']);
 let localIcons = {};
 try {
-  localIcons = JSON.parse(execFileSync(process.execPath, [path.join(root, 'host', 'host.js'), '--cli', '{"type":"appIcons"}'], { encoding: 'utf8' })).icons || {};
+  localIcons = JSON.parse(execFileSync(process.execPath, [path.join(ext, 'helper', 'host.js'), '--cli', '{"type":"appIcons"}'], { encoding: 'utf8' })).icons || {};
 } catch {}
 const bundledIcons = path.join(__dirname, 'demo', 'app-icons');
 for (const f of fs.existsSync(bundledIcons) ? fs.readdirSync(bundledIcons) : []) {

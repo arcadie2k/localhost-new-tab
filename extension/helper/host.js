@@ -6,6 +6,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
+const vm = require('vm');
+
+const HELPER_VERSION = '1.1.1';
 
 const HOME = os.homedir();
 const DATA_DIR = path.join(HOME, '.localhost-new-tab');
@@ -353,7 +356,7 @@ async function scan() {
   }
 
   saveState(state);
-  return { projects, apps: await detectApps(), home: HOME };
+  return { projects, apps: await detectApps(), home: HOME, helper: helperInfo() };
 }
 
 function startShell(command, cwd, logFile) {
@@ -573,7 +576,35 @@ async function icon({ port }) {
   return { icon: await fetchIcon(`http://localhost:${port}`) };
 }
 
-const HANDLERS = { scan, start, stop, open, setCommand, forget, dismiss, thumb, icon, appIcons };
+const HANDLERS = { scan, start, stop, open, setCommand, forget, dismiss, thumb, icon, appIcons, diag, update: (msg) => installHelper(msg) };
+
+function sha256(data) {
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+function helperInfo(file = __filename) {
+  return { version: HELPER_VERSION, hash: sha256(fs.readFileSync(file)) };
+}
+
+function installHelper({ source, hash }, target = __filename) {
+  if (typeof source !== 'string' || !source) throw new Error('Empty helper');
+  const data = Buffer.from(source, 'utf8');
+  if (sha256(data) !== hash) throw new Error('Helper checksum mismatch, nothing was installed');
+  new vm.Script(source.replace(/^#!.*/, ''), { filename: 'host.js' });
+  const tmp = `${target}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, data, { mode: 0o755 });
+  if (fs.existsSync(target)) fs.copyFileSync(target, target.replace(/\.js$/, '.prev.js'));
+  fs.renameSync(tmp, target);
+  return { ok: true, ...helperInfo(target) };
+}
+
+function diag() {
+  let errors = [];
+  try {
+    errors = fs.readFileSync(path.join(DATA_DIR, 'host.err'), 'utf8').trim().split('\n').filter(Boolean).slice(-20);
+  } catch {}
+  return { ...helperInfo(), node: process.version, platform: `${process.platform} ${os.release()}`, path: __filename, errors };
+}
 
 async function handle(msg) {
   const fn = HANDLERS[msg && msg.type];
@@ -606,7 +637,7 @@ function writeNativeMessage(msg) {
 }
 
 if (require.main !== module) {
-  module.exports = { isForeignApp };
+  module.exports = { isForeignApp, helperInfo, installHelper, HELPER_VERSION };
 } else if (process.argv[2] === '--cli') {
   handle(JSON.parse(process.argv[3] || '{"type":"scan"}')).then((res) => {
     console.log(JSON.stringify(res, null, 2));

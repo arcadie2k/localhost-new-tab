@@ -1,3 +1,4 @@
+import { setupCommand, syncHelper } from './helper.js';
 import { $, icon, esc, ago, toast, state } from './core.js';
 import { openPopover, closeMenu, menuItem } from './menu.js';
 import { normalizePrefs, isSectionOn } from './lib/prefs.js';
@@ -393,8 +394,7 @@ export function renderSetup(err) {
   $('section-recent').hidden = true;
   $('empty').hidden = true;
   $('setup').hidden = false;
-  const version = chrome.runtime.getManifest?.().version || '1.0.0';
-  $('setup-command').textContent = `curl -fsSL https://raw.githubusercontent.com/arcadie2k/localhost-new-tab/v${version}/install.sh | sh -s -- ${chrome.runtime.id}`;
+  $('setup-command').textContent = setupCommand();
   $('setup-error').textContent = err ? err.message : '';
   $('app').removeAttribute('aria-busy');
 }
@@ -458,6 +458,7 @@ export async function refresh() {
     const res = await host({ type: 'scan' });
     state.projects = res.projects;
     state.apps = res.apps || {};
+    syncHelper(res.helper, host);
     loadAppIcons();
     for (const [id, kind] of state.pending) {
       const p = res.projects.find((x) => x.id === id);
